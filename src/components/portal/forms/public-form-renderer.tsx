@@ -1,22 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { PuckRenderer } from "@/lib/puck/renderer";
 import type { Data } from "@puckeditor/core";
 import { Loader2 } from "lucide-react";
-
-interface FormField {
-  id: string;
-  type: string;
-  label: string;
-  required: boolean;
-  placeholder?: string;
-  options?: string[];
-}
+import { FormFieldComponent, type FormField } from "./form-field-component";
 
 interface PublicFormRendererProps {
   formId: string;
@@ -45,6 +34,21 @@ export function PublicFormRenderer({
   const [submissionData, setSubmissionData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const postHeight = useCallback(() => {
+    if (!isEmbed || !containerRef.current) return;
+    const height = containerRef.current.scrollHeight;
+    window.parent.postMessage({ type: "form-embed-resize", height }, "*");
+  }, [isEmbed]);
+
+  useEffect(() => {
+    if (!isEmbed) return;
+    postHeight();
+    const observer = new ResizeObserver(postHeight);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [isEmbed, postHeight, submitted]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,14 +98,14 @@ export function PublicFormRenderer({
   if (submitted) {
     if (successPageData && settings.success_behavior === "show_page") {
       return (
-        <div className={isEmbed ? "" : "min-h-screen"}>
+        <div ref={containerRef} className={isEmbed ? "" : "min-h-screen"}>
           <PuckRenderer data={successPageData as Data} />
         </div>
       );
     }
 
     return (
-      <div className={`flex items-center justify-center ${isEmbed ? "p-8" : "min-h-screen"}`}>
+      <div ref={containerRef} className={`flex items-center justify-center ${isEmbed ? "p-8" : "min-h-screen"}`}>
         <div className="max-w-md text-center space-y-4">
           <div className="mx-auto h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
             <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,73 +137,14 @@ export function PublicFormRenderer({
     </form>
   );
 
-  if (pageData) {
+  if (pageData && !isEmbed) {
     return (
-      <div className={isEmbed ? "" : "min-h-screen"}>
+      <div className="min-h-screen">
         <PuckRenderer data={pageData as Data} />
       </div>
     );
   }
 
-  return <div className={isEmbed ? "" : "min-h-screen bg-background"}>{formContent}</div>;
+  return <div ref={containerRef} className={isEmbed ? "" : "min-h-screen bg-background"}>{formContent}</div>;
 }
 
-function FormFieldComponent({ field }: { field: FormField }) {
-  if (field.type === "heading") {
-    return <h2 className="text-xl font-semibold pt-4">{field.label}</h2>;
-  }
-  if (field.type === "paragraph") {
-    return <p className="text-muted-foreground">{field.label}</p>;
-  }
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={field.id}>
-        {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      {field.type === "textarea" ? (
-        <Textarea
-          id={field.id}
-          name={field.id}
-          placeholder={field.placeholder}
-          required={field.required}
-        />
-      ) : field.type === "select" ? (
-        <select
-          id={field.id}
-          name={field.id}
-          required={field.required}
-          className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="">Select...</option>
-          {field.options?.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      ) : field.type === "radio" ? (
-        <div className="space-y-2">
-          {field.options?.map((opt) => (
-            <label key={opt} className="flex items-center gap-2 text-sm">
-              <input type="radio" name={field.id} value={opt} required={field.required} />
-              {opt}
-            </label>
-          ))}
-        </div>
-      ) : field.type === "checkbox" ? (
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name={field.id} />
-          {field.placeholder || field.label}
-        </label>
-      ) : (
-        <Input
-          id={field.id}
-          name={field.id}
-          type={field.type === "email" ? "email" : field.type === "phone" ? "tel" : field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-          placeholder={field.placeholder}
-          required={field.required}
-        />
-      )}
-    </div>
-  );
-}

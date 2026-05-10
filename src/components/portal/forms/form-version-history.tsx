@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { rollbackFormVersion } from "@/actions/forms";
+import { loadVersionIntoDraft } from "@/actions/forms";
 import type { FormVersion } from "@/types/database";
 import { RotateCcw } from "lucide-react";
 
@@ -17,8 +17,8 @@ export function FormVersionHistory({
   currentVersionId,
   versions,
 }: FormVersionHistoryProps) {
-  async function handleRollback(versionId: string) {
-    await rollbackFormVersion(formId, versionId);
+  async function handleLoadVersion(versionId: string) {
+    await loadVersionIntoDraft(formId, versionId);
   }
 
   return (
@@ -49,10 +49,10 @@ export function FormVersionHistory({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleRollback(version.id)}
+              onClick={() => handleLoadVersion(version.id)}
             >
               <RotateCcw className="mr-1 h-3.5 w-3.5" />
-              Rollback
+              Load into Editor
             </Button>
           )}
         </div>

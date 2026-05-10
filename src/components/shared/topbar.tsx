@@ -20,7 +20,7 @@ export function Topbar({ userName, userRole }: TopbarProps) {
           </div>
           <div>
             <p className="font-medium leading-none">{userName}</p>
-            <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">{userRole}</p>
           </div>
         </div>
         <form action={signOut}>

@@ -63,6 +63,39 @@ export async function saveFormVersion(
 ) {
   const supabase = await createClient();
 
+  const { data: form } = await supabase
+    .from("forms")
+    .select("current_version_id, published_version_id, status")
+    .eq("id", formId)
+    .single();
+
+  if (!form) return { error: "Form not found" };
+
+  const isPublished = form.status === "published";
+  const currentIsPublished =
+    isPublished && form.current_version_id === form.published_version_id;
+
+  // If the form has never been published, or the current draft isn't the
+  // published version, just update the existing version row in place.
+  if (form.current_version_id && !currentIsPublished) {
+    const { error } = await supabase
+      .from("form_versions")
+      .update({
+        schema: data.schema,
+        page_data: data.page_data || null,
+        success_page_data: data.success_page_data || null,
+        settings: data.settings,
+      })
+      .eq("id", form.current_version_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/portal/forms/${formId}`);
+    return { success: true, versionId: form.current_version_id };
+  }
+
+  // The current version IS the published version -- we need to fork a new
+  // draft so the live form stays untouched until the next publish.
   const { data: latestVersion } = await supabase
     .from("form_versions")
     .select("version_number")
@@ -82,6 +115,7 @@ export async function saveFormVersion(
       page_data: data.page_data || null,
       success_page_data: data.success_page_data || null,
       settings: data.settings,
+      status: "draft",
     })
     .select()
     .single();
@@ -94,7 +128,7 @@ export async function saveFormVersion(
     .eq("id", formId);
 
   revalidatePath(`/portal/forms/${formId}`);
-  return { success: true };
+  return { success: true, versionId: version.id };
 }
 
 export async function publishForm(formId: string) {
@@ -106,16 +140,24 @@ export async function publishForm(formId: string) {
     .eq("id", formId)
     .single();
 
-  if (form?.current_version_id) {
-    await supabase
-      .from("form_versions")
-      .update({ published_at: new Date().toISOString() })
-      .eq("id", form.current_version_id);
+  if (!form?.current_version_id) {
+    return { error: "No version to publish" };
   }
 
   await supabase
+    .from("form_versions")
+    .update({
+      published_at: new Date().toISOString(),
+      status: "published",
+    })
+    .eq("id", form.current_version_id);
+
+  await supabase
     .from("forms")
-    .update({ status: "published" })
+    .update({
+      status: "published",
+      published_version_id: form.current_version_id,
+    })
     .eq("id", formId);
 
   revalidatePath(`/portal/forms/${formId}`);
@@ -123,7 +165,46 @@ export async function publishForm(formId: string) {
   return { success: true };
 }
 
-export async function rollbackFormVersion(formId: string, versionId: string) {
+export async function publishSpecificVersion(formId: string, versionId: string) {
+  const supabase = await createClient();
+
+  await supabase
+    .from("form_versions")
+    .update({
+      published_at: new Date().toISOString(),
+      status: "published",
+    })
+    .eq("id", versionId);
+
+  await supabase
+    .from("forms")
+    .update({
+      status: "published",
+      published_version_id: versionId,
+    })
+    .eq("id", formId);
+
+  revalidatePath(`/portal/forms/${formId}`);
+  revalidatePath("/portal/forms");
+  return { success: true };
+}
+
+export async function deleteForm(formId: string) {
+  const supabase = await createClient();
+
+  await supabase
+    .from("forms")
+    .update({ current_version_id: null, published_version_id: null })
+    .eq("id", formId);
+
+  await supabase.from("form_versions").delete().eq("form_id", formId);
+  await supabase.from("forms").delete().eq("id", formId);
+
+  revalidatePath("/portal/forms");
+  redirect("/portal/forms");
+}
+
+export async function loadVersionIntoDraft(formId: string, versionId: string) {
   const supabase = await createClient();
 
   await supabase

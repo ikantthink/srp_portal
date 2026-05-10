@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bell, Mail, User } from "lucide-react";
+import { Bell, Blocks, Mail, User } from "lucide-react";
 
 export default function SettingsPage() {
   const sections = [
@@ -21,6 +21,12 @@ export default function SettingsPage() {
       description: "Customize email and SMS templates",
       href: "/portal/settings/templates",
       icon: Mail,
+    },
+    {
+      title: "Block Presets",
+      description: "Manage reusable page editor component presets",
+      href: "/portal/settings/block-presets",
+      icon: Blocks,
     },
   ];
 

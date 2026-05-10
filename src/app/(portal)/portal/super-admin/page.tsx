@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Palette, Key, Users } from "lucide-react";
+import { Palette, Key, Users, Globe } from "lucide-react";
 
 export default function SuperAdminPage() {
   const sections = [
@@ -9,6 +9,12 @@ export default function SuperAdminPage() {
       description: "Logo, colors, and fonts for portal and website",
       href: "/portal/super-admin/branding",
       icon: Palette,
+    },
+    {
+      title: "Domains",
+      description: "Primary site domain and short URL domain",
+      href: "/portal/super-admin/domains",
+      icon: Globe,
     },
     {
       title: "API Keys",

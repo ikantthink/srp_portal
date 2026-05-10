@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { ComponentConfig } from "@puckeditor/core";
 
 export type FormEmbedProps = {
@@ -5,9 +8,84 @@ export type FormEmbedProps = {
   heading: string;
 };
 
+function FormSlugField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [forms, setForms] = useState<{ slug: string; name: string; status: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/forms/list")
+      .then((r) => r.json())
+      .then((data) => setForms(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <select disabled className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm opacity-50">
+        <option>Loading forms...</option>
+      </select>
+    );
+  }
+
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+    >
+      <option value="">Select a form...</option>
+      {forms.map((f) => (
+        <option key={f.slug} value={f.slug}>
+          {f.name} {f.status !== "published" ? `(${f.status})` : ""}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function AutoResizeIframe({ src }: { src: string }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(200);
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "form-embed-resize" && typeof e.data.height === "number") {
+        setHeight(e.data.height);
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      src={src}
+      className="w-full border-0 rounded-lg"
+      style={{ height, overflow: "hidden" }}
+      scrolling="no"
+    />
+  );
+}
+
 export const FormEmbedConfig: ComponentConfig<FormEmbedProps> = {
   fields: {
-    formSlug: { type: "text" },
+    formSlug: {
+      type: "custom",
+      render: ({ value, onChange }) => (
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Form</label>
+          <FormSlugField value={value} onChange={onChange} />
+        </div>
+      ),
+    },
     heading: { type: "text" },
   },
   defaultProps: { formSlug: "", heading: "" },
@@ -24,10 +102,7 @@ export const FormEmbedConfig: ComponentConfig<FormEmbedProps> = {
             </p>
           </div>
         ) : formSlug ? (
-          <iframe
-            src={`/f/${formSlug}?embed=true`}
-            className="w-full min-h-[400px] rounded-lg border-0"
-          />
+          <AutoResizeIframe src={`/f/${formSlug}?embed=true`} />
         ) : (
           <p className="text-center text-muted-foreground">No form configured.</p>
         )}

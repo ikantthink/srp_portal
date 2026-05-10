@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { PublicFormRenderer } from "@/components/portal/forms/public-form-renderer";
@@ -13,32 +15,50 @@ export default async function PublicFormPage({
   const { embed } = await searchParams;
   const supabase = createAdminClient();
 
-  const { data: form } = await supabase
-    .from("forms")
-    .select("*, form_versions(*)")
-    .eq("slug", slug)
-    .eq("status", "published")
+  const [{ data: form }, { data: brand }] = await Promise.all([
+    supabase
+      .from("forms")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .single(),
+    supabase
+      .from("brand_settings")
+      .select("primary_color, secondary_color, accent_color, font_heading, font_body")
+      .limit(1)
+      .single(),
+  ]);
+
+  if (!form || !form.published_version_id) notFound();
+
+  const { data: version } = await supabase
+    .from("form_versions")
+    .select("*")
+    .eq("id", form.published_version_id)
     .single();
-
-  if (!form) notFound();
-
-  const version = form.current_version_id
-    ? (form as any).form_versions?.find((v: any) => v.id === form.current_version_id)
-    : null;
 
   if (!version) notFound();
 
   const isEmbed = embed === "true";
 
+  const brandStyle: Record<string, string> = {};
+  if (brand?.primary_color) brandStyle["--brand-primary"] = brand.primary_color;
+  if (brand?.secondary_color) brandStyle["--brand-secondary"] = brand.secondary_color;
+  if (brand?.accent_color) brandStyle["--brand-accent"] = brand.accent_color;
+  if (brand?.font_heading) brandStyle["--font-heading"] = `"${brand.font_heading}"`;
+  if (brand?.font_body) brandStyle["--font-body"] = `"${brand.font_body}"`;
+
   return (
-    <PublicFormRenderer
-      formId={form.id}
-      versionId={version.id}
-      schema={version.schema}
-      pageData={version.page_data}
-      successPageData={version.success_page_data}
-      settings={version.settings}
-      isEmbed={isEmbed}
-    />
+    <div style={brandStyle as React.CSSProperties}>
+      <PublicFormRenderer
+        formId={form.id}
+        versionId={version.id}
+        schema={version.schema}
+        pageData={version.page_data}
+        successPageData={version.success_page_data}
+        settings={version.settings}
+        isEmbed={isEmbed}
+      />
+    </div>
   );
 }

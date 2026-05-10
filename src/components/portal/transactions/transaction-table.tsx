@@ -67,8 +67,7 @@ export function TransactionTable({ data }: { data: Transaction[] }) {
     <DataTable
       columns={columns}
       data={data}
-      searchKey="property_address"
-      searchPlaceholder="Search by address..."
+      searchPlaceholder="Search transactions..."
     />
   );
 }

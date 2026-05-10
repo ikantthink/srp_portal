@@ -90,10 +90,11 @@ describe("Database type enums are correctly typed", () => {
     expect(statuses).toHaveLength(5);
   });
 
-  it("LinkCardWidgetType includes newsletter_subscribe", () => {
+  it("LinkCardWidgetType includes all widget types", () => {
     const types: LinkCardWidgetType[] = [
       "social_link",
       "form_link",
+      "button_link",
       "image",
       "video_embed",
       "text_block",
@@ -101,8 +102,11 @@ describe("Database type enums are correctly typed", () => {
       "map_embed",
       "calendar_link",
       "newsletter_subscribe",
+      "widget_group",
     ];
-    expect(types).toHaveLength(9);
+    expect(types).toHaveLength(11);
     expect(types).toContain("newsletter_subscribe");
+    expect(types).toContain("button_link");
+    expect(types).toContain("widget_group");
   });
 });

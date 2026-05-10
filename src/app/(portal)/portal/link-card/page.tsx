@@ -1,6 +1,10 @@
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LinkCardEditor } from "@/components/portal/link-card/link-card-editor";
+import { createLinkCardShortUrl } from "@/actions/short-urls";
+import { LinkCardShortUrl } from "@/components/portal/link-card/link-card-short-url";
+import { getShortDomain } from "@/lib/site-settings";
 
 export default async function LinkCardPage() {
   const supabase = await createClient();
@@ -46,6 +50,29 @@ export default async function LinkCardPage() {
     currentVersion = data;
   }
 
+  const { data: publishedForms } = await supabase
+    .from("forms")
+    .select("id, name, slug")
+    .eq("status", "published");
+
+  const { data: existingShortUrl } = await supabase
+    .from("short_urls")
+    .select("*")
+    .eq("link_card_id", linkCard.id)
+    .single();
+
+  let shortUrlCode = existingShortUrl?.code;
+  if (!existingShortUrl) {
+    const result = await createLinkCardShortUrl(linkCard.id, linkCard.slug);
+    if (result.shortUrl) {
+      shortUrlCode = result.shortUrl.code;
+    }
+  }
+
+  const configuredShortDomain = await getShortDomain();
+  const h = await headers();
+  const shareHost = configuredShortDomain ?? h.get("host") ?? "";
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,6 +83,9 @@ export default async function LinkCardPage() {
             /c/{linkCard.slug}
           </a>
         </p>
+        {shortUrlCode && shareHost && (
+          <LinkCardShortUrl code={shortUrlCode} shortDomain={shareHost} />
+        )}
       </div>
 
       <LinkCardEditor
@@ -63,6 +93,7 @@ export default async function LinkCardPage() {
         profile={profile}
         initialWidgets={currentVersion?.widgets || []}
         initialLayout={currentVersion?.layout || {}}
+        forms={publishedForms || []}
       />
     </div>
   );

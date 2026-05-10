@@ -55,13 +55,31 @@ export type SubscriberStatus = "active" | "unsubscribed" | "bounced";
 export type LinkCardWidgetType =
   | "social_link"
   | "form_link"
+  | "button_link"
   | "image"
   | "video_embed"
   | "text_block"
   | "contact_info"
   | "map_embed"
   | "calendar_link"
-  | "newsletter_subscribe";
+  | "newsletter_subscribe"
+  | "widget_group";
+
+export interface LinkCardLayout {
+  show_header: boolean;
+  show_name: boolean;
+  show_bio: boolean;
+  show_avatar: boolean;
+  header_bg_type: "gradient" | "image";
+  header_gradient_from: string;
+  header_gradient_to: string;
+  header_bg_image: string;
+  header_text_color: string;
+  avatar_size: "sm" | "md" | "lg" | "xl";
+  page_bg_color: string;
+  card_bg_color: string;
+  body_text_color: string;
+}
 
 export interface Profile {
   id: string;
@@ -140,6 +158,7 @@ export interface Lead {
   source: LeadSource;
   status: LeadStatus;
   type: LeadType;
+  workflow_stage_id: string | null;
   timeline: string | null;
   budget_min: number | null;
   budget_max: number | null;
@@ -148,6 +167,33 @@ export interface Lead {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Joined relations (optional)
+  tags?: LeadTag[];
+  workflow_stage?: WorkflowStage | null;
+}
+
+export interface LeadTag {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  entity_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowStage {
+  id: string;
+  workflow_id: string;
+  name: string;
+  color: string;
+  position: number;
+  created_at: string;
 }
 
 export interface LeadActivity {
@@ -185,6 +231,7 @@ export interface Form {
   slug: string;
   status: FormStatus;
   current_version_id: string | null;
+  published_version_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -198,6 +245,7 @@ export interface FormVersion {
   page_data: Record<string, unknown> | null;
   success_page_data: Record<string, unknown> | null;
   settings: Record<string, unknown>;
+  status: string;
   published_at: string | null;
   created_at: string;
 }
@@ -255,6 +303,24 @@ export interface WebsitePage {
   updated_at: string;
 }
 
+export interface ShortUrl {
+  id: string;
+  code: string;
+  target_url: string;
+  title: string | null;
+  click_count: number;
+  created_by: string;
+  link_card_id: string | null;
+  created_at: string;
+}
+
+export interface SiteSettings {
+  id: string;
+  short_domain: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BrandSettings {
   id: string;
   logo_url: string | null;
@@ -263,6 +329,9 @@ export interface BrandSettings {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  sidebar_bg: string | null;
+  sidebar_fg: string | null;
+  sidebar_muted: string | null;
   font_heading: string;
   font_body: string;
   created_at: string;
