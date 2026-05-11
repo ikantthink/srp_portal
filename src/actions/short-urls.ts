@@ -4,6 +4,31 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ShortUrlPrefix } from "@/types/database";
+
+/**
+ * Generate a unique 4-char code within a prefix pool, retrying a few times on
+ * collision. Birthday-paradox math says a 64-alphabet 4-char pool starts
+ * colliding around ~5K codes; on the rare retry-exhaustion case we bump to
+ * length 6 (~68B combos) as a safety valve rather than failing the insert.
+ */
+async function generateCode(
+  supabase: SupabaseClient,
+  prefix: ShortUrlPrefix
+): Promise<string> {
+  for (let i = 0; i < 5; i++) {
+    const code = nanoid(4);
+    const { data } = await supabase
+      .from("short_urls")
+      .select("id")
+      .eq("prefix", prefix)
+      .eq("code", code)
+      .maybeSingle();
+    if (!data) return code;
+  }
+  return nanoid(6);
+}
 
 export async function createShortUrl(targetUrl: string, title?: string) {
   const supabase = await createClient();
@@ -21,11 +46,12 @@ export async function createShortUrl(targetUrl: string, title?: string) {
 
   if (!profile) return { error: "No profile found" };
 
-  const code = nanoid(7);
+  const code = await generateCode(supabase, "s");
 
   const { data, error } = await supabase
     .from("short_urls")
     .insert({
+      prefix: "s",
       code,
       target_url: targetUrl,
       title: title || null,
@@ -79,21 +105,21 @@ export async function createLinkCardShortUrl(
     .from("short_urls")
     .select("*")
     .eq("link_card_id", linkCardId)
-    .single();
+    .maybeSingle();
 
   if (existing) return { shortUrl: existing };
 
   const h = await headers();
-  // headers().get('origin') is unreliable for same-origin server-action calls,
-  // so build the canonical link-card URL from host + protocol forwarding hints.
   const host = h.get("host") ?? "";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const proto =
+    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const target = host ? `${proto}://${host}/c/${slug}` : `/c/${slug}`;
-  const code = nanoid(7);
+  const code = await generateCode(supabase, "l");
 
   const { data, error } = await supabase
     .from("short_urls")
     .insert({
+      prefix: "l",
       code,
       target_url: target,
       title: `Link Card: ${slug}`,

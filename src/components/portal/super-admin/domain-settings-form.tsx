@@ -59,10 +59,14 @@ export function DomainSettingsForm({
           Display only. The portal renders share URLs using this host so they
           look like{" "}
           <code className="rounded bg-muted px-1 py-0.5">
-            {previewHost}/c/{previewCode}
-          </code>
-          . Add the domain to this Vercel project first; DNS + TLS are handled
-          there. Leave blank to use the current host.
+            {previewHost}/s/{previewCode}
+          </code>{" "}
+          or{" "}
+          <code className="rounded bg-muted px-1 py-0.5">
+            {previewHost}/l/{previewCode}
+          </code>{" "}
+          (for link cards). Add the domain to this Vercel project first; DNS +
+          TLS are handled there. Leave blank to use the current host.
         </p>
       </div>
 
@@ -71,9 +75,12 @@ export function DomainSettingsForm({
           <span className="font-semibold text-foreground">How it works:</span>{" "}
           every domain pointed at this Vercel project serves the same app.
           Visiting{" "}
-          <code className="rounded bg-background px-1 py-0.5">/c/&lt;code&gt;</code>{" "}
-          on any of them resolves a short URL, or falls back to a link card
-          slug.
+          <code className="rounded bg-background px-1 py-0.5">/s/&lt;code&gt;</code>{" "}
+          redirects a standard short URL,{" "}
+          <code className="rounded bg-background px-1 py-0.5">/l/&lt;code&gt;</code>{" "}
+          redirects to a link card, and{" "}
+          <code className="rounded bg-background px-1 py-0.5">/c/&lt;slug&gt;</code>{" "}
+          renders the link card directly.
         </p>
         {currentHost && (
           <p>

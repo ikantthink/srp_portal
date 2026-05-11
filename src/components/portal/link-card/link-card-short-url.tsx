@@ -15,7 +15,7 @@ function isLocalhost(host: string): boolean {
 export function LinkCardShortUrl({ code, shortDomain }: LinkCardShortUrlProps) {
   const [copied, setCopied] = useState(false);
   const scheme = isLocalhost(shortDomain) ? "http" : "https";
-  const fullUrl = `${scheme}://${shortDomain}/c/${code}`;
+  const fullUrl = `${scheme}://${shortDomain}/l/${code}`;
 
   function handleCopy() {
     navigator.clipboard.writeText(fullUrl);
@@ -27,7 +27,7 @@ export function LinkCardShortUrl({ code, shortDomain }: LinkCardShortUrlProps) {
     <p className="text-muted-foreground flex items-center gap-2">
       Short URL:{" "}
       <code className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
-        {shortDomain}/c/{code}
+        {shortDomain}/l/{code}
       </code>
       <button
         onClick={handleCopy}

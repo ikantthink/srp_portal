@@ -303,8 +303,11 @@ export interface WebsitePage {
   updated_at: string;
 }
 
+export type ShortUrlPrefix = "l" | "s";
+
 export interface ShortUrl {
   id: string;
+  prefix: ShortUrlPrefix;
   code: string;
   target_url: string;
   title: string | null;

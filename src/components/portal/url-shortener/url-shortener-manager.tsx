@@ -60,7 +60,7 @@ export function UrlShortenerManager({
     const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(shortDomain)
       ? "http"
       : "https";
-    navigator.clipboard.writeText(`${scheme}://${shortDomain}/c/${code}`);
+    navigator.clipboard.writeText(`${scheme}://${shortDomain}/s/${code}`);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }
@@ -89,7 +89,7 @@ export function UrlShortenerManager({
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <code className="rounded bg-muted px-2 py-0.5 text-xs">
-            {shortDomain}/c/{row.original.code}
+            {shortDomain}/s/{row.original.code}
           </code>
           <button
             onClick={() => copyToClipboard(row.original.code, row.original.id)}

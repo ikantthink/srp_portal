@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_SETTINGS_TAG } from "@/lib/site-settings";
 
@@ -57,6 +57,6 @@ export async function updateSiteSettings(input: { short_domain: string | null })
     if (error) return { error: error.message };
   }
 
-  revalidateTag(SITE_SETTINGS_TAG);
+  updateTag(SITE_SETTINGS_TAG);
   return { success: true, short_domain: short };
 }
