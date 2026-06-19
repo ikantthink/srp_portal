@@ -31,6 +31,7 @@ interface FormBuilderTabsProps {
   publishedVersionId: string | null;
   submissions: FormSubmission[];
   initialTab?: string;
+  aiEnabled?: boolean;
 }
 
 const validTabs: Tab[] = ["fields", "settings", "landing_page", "success_page", "versions", "submissions"];
@@ -44,6 +45,7 @@ export function FormBuilderTabs({
   publishedVersionId,
   submissions,
   initialTab,
+  aiEnabled = false,
 }: FormBuilderTabsProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -206,6 +208,7 @@ export function FormBuilderTabs({
             onChange={(data) => setPageData(data)}
             onSave={(data) => setPageData(data)}
             formSlug={formSlug}
+            aiEnabled={aiEnabled}
           />
         </div>
       )}
@@ -216,6 +219,7 @@ export function FormBuilderTabs({
             initialData={successPageData || { content: [], root: { props: {} } }}
             onChange={(data) => setSuccessPageData(data)}
             onSave={(data) => setSuccessPageData(data)}
+            aiEnabled={aiEnabled}
           />
         </div>
       )}

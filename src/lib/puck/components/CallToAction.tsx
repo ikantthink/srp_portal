@@ -37,13 +37,13 @@ export const CallToActionConfig: ComponentConfig<CallToActionProps> = {
       accent: "bg-brand-accent text-black",
     };
     return (
-      <section className={`px-6 py-16 ${bgMap[variant]}`}>
+      <section className={`px-4 py-12 sm:px-6 sm:py-16 ${bgMap[variant]}`}>
         <div className="max-w-3xl mx-auto text-center space-y-4">
-          <h2 className="text-3xl font-bold">{heading}</h2>
-          <p className="text-lg opacity-90">{description}</p>
+          <h2 className="text-2xl font-bold sm:text-3xl">{heading}</h2>
+          <p className="text-base opacity-90 sm:text-lg">{description}</p>
           <a
             href={buttonLink}
-            className="inline-flex h-12 items-center rounded-lg bg-white/20 backdrop-blur px-8 font-semibold hover:bg-white/30 transition-colors"
+            className="inline-flex h-11 items-center rounded-lg bg-white/20 backdrop-blur px-6 font-semibold hover:bg-white/30 transition-colors sm:h-12 sm:px-8"
           >
             {buttonText}
           </a>

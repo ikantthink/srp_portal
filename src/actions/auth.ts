@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 export async function signInWithPassword(formData: FormData) {
   const supabase = await createClient();
@@ -37,6 +38,10 @@ export async function signInWithMagicLink(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
+  if (!(await isIntegrationEnabled("google_login"))) {
+    return { error: "Google sign-in is currently disabled." };
+  }
+
   const supabase = await createClient();
   const headersList = await headers();
   const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;

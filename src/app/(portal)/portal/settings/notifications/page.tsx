@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NotificationSettings } from "@/components/portal/settings/notification-settings";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 const eventTypes = [
   { key: "new_lead", label: "New Lead" },
@@ -20,6 +21,8 @@ export default async function NotificationsPage() {
     .select("*")
     .eq("user_id", user.id);
 
+  const smsEnabled = await isIntegrationEnabled("twilio_sms");
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Notification Settings</h1>
@@ -30,6 +33,7 @@ export default async function NotificationsPage() {
             userId={user.id}
             eventTypes={eventTypes}
             currentSettings={settings || []}
+            smsEnabled={smsEnabled}
           />
         </CardContent>
       </Card>

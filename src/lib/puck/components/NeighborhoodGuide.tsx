@@ -30,8 +30,8 @@ export const NeighborhoodGuideConfig: ComponentConfig<NeighborhoodGuideProps> = 
       });
 
     return (
-      <section className="px-6 py-12">
-        <div className="max-w-4xl mx-auto grid gap-8 md:grid-cols-2 items-center">
+      <section className="px-4 py-12 sm:px-6">
+        <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2 md:gap-8 md:items-center">
           <div>
             {image ? (
               <img src={image} alt={name} className="w-full rounded-xl object-cover aspect-video" />

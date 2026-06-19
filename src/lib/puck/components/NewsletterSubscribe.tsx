@@ -60,14 +60,14 @@ function NewsletterSubscribeWidget({
   }
 
   return (
-    <section className="px-6 py-16 bg-brand-primary/5">
+    <section className="px-4 py-12 bg-brand-primary/5 sm:px-6 sm:py-16">
       <div className="max-w-xl mx-auto text-center space-y-4">
         <h2 className="text-2xl font-bold">{heading}</h2>
         <p className="text-muted-foreground">{description}</p>
         {status === "success" ? (
           <p className="text-emerald-600 font-medium">Thanks for subscribing!</p>
         ) : (
-          <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-md mx-auto sm:flex-row">
             <input
               type="email"
               value={email}

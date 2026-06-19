@@ -25,10 +25,10 @@ export const TeamGridConfig: ComponentConfig<TeamGridProps> = {
       });
 
     return (
-      <section className="px-6 py-16">
+      <section className="px-4 py-12 sm:px-6 sm:py-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-10">{heading}</h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="text-2xl font-bold text-center mb-8 sm:text-3xl sm:mb-10">{heading}</h2>
+          <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
             {team.map((m, i) => (
               <div key={i} className="rounded-xl border bg-card p-6 text-center">
                 {m.avatar && (

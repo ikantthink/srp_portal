@@ -1,34 +1,69 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bell, Blocks, Mail, User } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Bell, Globe, Mail, Palette, User, type LucideIcon } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import type { Role } from "@/types/database";
 
-export default function SettingsPage() {
-  const sections = [
-    {
-      title: "Profile",
-      description: "Update your name, bio, and avatar",
-      href: "/portal/settings/profile",
-      icon: User,
-    },
-    {
-      title: "Notifications",
-      description: "Email and SMS notification preferences",
-      href: "/portal/settings/notifications",
-      icon: Bell,
-    },
-    {
-      title: "Email Templates",
-      description: "Customize email and SMS templates",
-      href: "/portal/settings/templates",
-      icon: Mail,
-    },
-    {
-      title: "Block Presets",
-      description: "Manage reusable page editor component presets",
-      href: "/portal/settings/block-presets",
-      icon: Blocks,
-    },
-  ];
+interface Section {
+  title: string;
+  description: string;
+  href: string;
+  icon: LucideIcon;
+  roles?: Role[];
+}
+
+const sections: Section[] = [
+  {
+    title: "Profile",
+    description: "Update your name, bio, and avatar",
+    href: "/portal/settings/profile",
+    icon: User,
+  },
+  {
+    title: "Notifications",
+    description: "Email and SMS notification preferences",
+    href: "/portal/settings/notifications",
+    icon: Bell,
+  },
+  {
+    title: "Email Templates",
+    description: "Customize email and SMS templates",
+    href: "/portal/settings/templates",
+    icon: Mail,
+  },
+  {
+    title: "Branding",
+    description: "Logos, colors, fonts, and sidebar theme",
+    href: "/portal/settings/branding",
+    icon: Palette,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    title: "Website",
+    description: "Block presets and reusable defaults",
+    href: "/portal/settings/website",
+    icon: Globe,
+    roles: ["admin", "super_admin"],
+  },
+];
+
+export default async function SettingsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let role: Role = "user";
+  if (user) {
+    const { data: roleRow } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+    role = (roleRow?.role as Role) || "user";
+  }
+
+  const visible = sections.filter((s) => !s.roles || s.roles.includes(role));
 
   return (
     <div className="space-y-6">
@@ -38,7 +73,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sections.map((s) => (
+        {visible.map((s) => (
           <Link key={s.href} href={s.href}>
             <Card className="transition-colors hover:border-brand-primary/50 cursor-pointer">
               <CardHeader>

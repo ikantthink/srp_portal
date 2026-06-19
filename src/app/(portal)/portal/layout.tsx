@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/shared/sidebar";
-import { Topbar } from "@/components/shared/topbar";
 import { BrandProvider } from "@/components/shared/brand-provider";
+import { PortalShell } from "@/components/shared/portal-shell";
 import type { Role } from "@/types/database";
 
 export default async function PortalLayout({
@@ -19,7 +18,7 @@ export default async function PortalLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, sidebar_collapsed")
     .eq("user_id", user.id)
     .single();
 
@@ -32,15 +31,28 @@ export default async function PortalLayout({
   const role = (roleData?.role as Role) || "user";
   const userName = profile?.full_name || user.email || "User";
 
+  // First-load backfill: persist `false` so the key is no longer null. We
+  // intentionally await so an immediate page revisit sees a populated value,
+  // but it only fires once per user.
+  if (profile && profile.sidebar_collapsed === null) {
+    await supabase
+      .from("profiles")
+      .update({ sidebar_collapsed: false })
+      .eq("user_id", user.id);
+  }
+
+  const initialCollapsed = profile?.sidebar_collapsed ?? false;
+
   return (
     <BrandProvider>
-      <div className="flex min-h-screen">
-        <Sidebar role={role} />
-        <div className="flex-1 pl-64">
-          <Topbar userName={userName} userRole={role} />
-          <main className="p-6">{children}</main>
-        </div>
-      </div>
+      <PortalShell
+        role={role}
+        userName={userName}
+        userId={user.id}
+        initialCollapsed={initialCollapsed}
+      >
+        {children}
+      </PortalShell>
     </BrandProvider>
   );
 }

@@ -15,9 +15,9 @@ export const BlogFeedConfig: ComponentConfig<BlogFeedProps> = {
     count: 3,
   },
   render: ({ heading, count, puck }) => (
-    <section className="px-6 py-16">
+    <section className="px-4 py-12 sm:px-6 sm:py-16">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-10">{heading}</h2>
+        <h2 className="text-2xl font-bold text-center mb-8 sm:text-3xl sm:mb-10">{heading}</h2>
         {puck?.isEditing ? (
           <div className="rounded-lg border-2 border-dashed border-brand-primary/30 p-8 text-center">
             <p className="text-sm text-muted-foreground">

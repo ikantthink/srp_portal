@@ -2,29 +2,40 @@ import { describe, it, expect } from "vitest";
 import { puckConfig, componentNames } from "@/lib/puck/config";
 
 describe("Puck Config", () => {
+  // MainNav and Footer used to ship as in-page Puck blocks, but they now live
+  // as global site chrome edited from /portal/website/chrome — they should
+  // not appear in the Puck drawer anymore.
   const expectedComponents = [
     "Hero",
+    "HeroVideo",
+    "HeroFlex",
     "TextBlock",
+    "Image",
     "ImageGallery",
     "VideoEmbed",
+    "YouTubeFeed",
     "Testimonials",
     "CallToAction",
     "ContactInfo",
     "TeamGrid",
     "ListingSearch",
     "FeaturedListings",
+    "ListingsGrid",
     "NeighborhoodGuide",
     "BlogFeed",
     "Stats",
     "FAQ",
     "Spacer",
     "Divider",
+    "Row",
+    "Column",
+    "Tile",
     "FormEmbed",
     "NewsletterSubscribe",
   ];
 
-  it("registers all 18 planned components", () => {
-    expect(Object.keys(puckConfig.components)).toHaveLength(18);
+  it("registers all planned components", () => {
+    expect(Object.keys(puckConfig.components)).toHaveLength(expectedComponents.length);
   });
 
   it.each(expectedComponents)("has %s component registered", (name) => {

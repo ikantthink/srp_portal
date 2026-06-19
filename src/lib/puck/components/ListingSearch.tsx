@@ -15,9 +15,9 @@ export const ListingSearchConfig: ComponentConfig<ListingSearchProps> = {
     placeholder: "City, ZIP, or address...",
   },
   render: ({ heading, placeholder, puck }) => (
-    <section className="px-6 py-12 bg-muted/30">
+    <section className="px-4 py-12 bg-muted/30 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-6">
-        <h2 className="text-3xl font-bold">{heading}</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">{heading}</h2>
         {puck?.isEditing ? (
           <div className="rounded-lg border-2 border-dashed border-brand-primary/30 p-8">
             <p className="text-sm text-muted-foreground">
@@ -25,7 +25,7 @@ export const ListingSearchConfig: ComponentConfig<ListingSearchProps> = {
             </p>
           </div>
         ) : (
-          <form action="/listings" method="GET" className="flex gap-2 max-w-lg mx-auto">
+          <form action="/listings" method="GET" className="flex flex-col gap-2 max-w-lg mx-auto sm:flex-row">
             <input
               type="text"
               name="q"

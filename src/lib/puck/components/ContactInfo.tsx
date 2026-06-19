@@ -16,7 +16,7 @@ export const ContactInfoConfig: ComponentConfig<ContactInfoProps> = {
   },
   defaultProps: { address: "123 Main St, City, State 12345", phone: "(555) 123-4567", email: "info@srpre.com", showMap: false },
   render: ({ address, phone, email }) => (
-    <section className="px-6 py-12 max-w-4xl mx-auto">
+    <section className="px-4 py-12 max-w-4xl mx-auto sm:px-6">
       <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border p-4">

@@ -21,8 +21,8 @@ export const FAQConfig: ComponentConfig<FAQProps> = {
     });
 
     return (
-      <section className="px-6 py-16 max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-10">Frequently Asked Questions</h2>
+      <section className="px-4 py-12 max-w-3xl mx-auto sm:px-6 sm:py-16">
+        <h2 className="text-2xl font-bold text-center mb-8 sm:text-3xl sm:mb-10">Frequently Asked Questions</h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
             <FAQItem key={i} question={faq.question || ""} answer={faq.answer || ""} />

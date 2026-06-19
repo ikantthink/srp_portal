@@ -11,7 +11,13 @@ import { generateNewsletterDraft } from "@/lib/ai/newsletter";
 import { Loader2, Sparkles, Send } from "lucide-react";
 import type { Newsletter } from "@/types/database";
 
-export function NewsletterComposer({ newsletter }: { newsletter: Newsletter | null }) {
+export function NewsletterComposer({
+  newsletter,
+  aiEnabled = false,
+}: {
+  newsletter: Newsletter | null;
+  aiEnabled?: boolean;
+}) {
   const [subject, setSubject] = useState(newsletter?.subject || "");
   const [body, setBody] = useState(
     newsletter?.body_json
@@ -55,9 +61,12 @@ export function NewsletterComposer({ newsletter }: { newsletter: Newsletter | nu
     setSending(false);
   }
 
+  const layout = aiEnabled ? "lg:grid-cols-3" : "lg:grid-cols-1";
+  const composeSpan = aiEnabled ? "lg:col-span-2" : "";
+
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-4">
+    <div className={`grid gap-6 ${layout}`}>
+      <div className={`${composeSpan} space-y-4`}>
         <Card>
           <CardHeader>
             <CardTitle>Compose</CardTitle>
@@ -98,33 +107,35 @@ export function NewsletterComposer({ newsletter }: { newsletter: Newsletter | nu
         </Card>
       </div>
 
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-brand-accent" />
-              AI Assistant
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Describe the newsletter you want to write, e.g. 'Monthly market update for April with spring buying tips'"
-              className="min-h-[100px]"
-            />
-            <Button
-              onClick={handleAIGenerate}
-              disabled={aiLoading}
-              className="w-full"
-              variant="secondary"
-            >
-              {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Generate Draft
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {aiEnabled && (
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-brand-accent" />
+                AI Assistant
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Describe the newsletter you want to write, e.g. 'Monthly market update for April with spring buying tips'"
+                className="min-h-[100px]"
+              />
+              <Button
+                onClick={handleAIGenerate}
+                disabled={aiLoading}
+                className="w-full"
+                variant="secondary"
+              >
+                {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate Draft
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

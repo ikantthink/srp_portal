@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NewsletterComposer } from "@/components/portal/newsletters/newsletter-composer";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 export default async function NewNewsletterPage({
   searchParams,
@@ -19,12 +20,14 @@ export default async function NewNewsletterPage({
     newsletter = data;
   }
 
+  const aiEnabled = await isIntegrationEnabled("ai");
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">
         {newsletter ? "Edit Newsletter" : "New Newsletter"}
       </h1>
-      <NewsletterComposer newsletter={newsletter} />
+      <NewsletterComposer newsletter={newsletter} aiEnabled={aiEnabled} />
     </div>
   );
 }

@@ -3,8 +3,13 @@
 import { generateText } from "ai";
 import { gateway } from "@/lib/ai/gateway";
 import { componentNames } from "../config";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 export async function generatePageData(prompt: string) {
+  if (!(await isIntegrationEnabled("ai"))) {
+    return { error: "AI is currently disabled." };
+  }
+
   const componentList = componentNames.join(", ");
 
   const { text } = await generateText({

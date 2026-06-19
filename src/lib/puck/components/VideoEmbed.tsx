@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core";
+import { mediaUrlField } from "../fields/media-url-field";
 
 export type VideoEmbedProps = {
   url: string;
@@ -7,7 +8,11 @@ export type VideoEmbedProps = {
 
 export const VideoEmbedConfig: ComponentConfig<VideoEmbedProps> = {
   fields: {
-    url: { type: "text" },
+    url: mediaUrlField({
+      accept: "video",
+      placeholder: "Paste YouTube/Vimeo URL or pick from Media",
+      folderSlug: "website",
+    }),
     aspectRatio: {
       type: "radio",
       options: [
@@ -27,7 +32,7 @@ export const VideoEmbedConfig: ComponentConfig<VideoEmbedProps> = {
     if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
 
     return (
-      <div className="px-6 py-12 max-w-4xl mx-auto">
+      <div className="px-4 py-10 max-w-4xl mx-auto sm:px-6 sm:py-12">
         <div className={`${ratioClass} w-full overflow-hidden rounded-lg bg-muted`}>
           {embedUrl ? (
             <iframe src={embedUrl} className="h-full w-full" allowFullScreen />

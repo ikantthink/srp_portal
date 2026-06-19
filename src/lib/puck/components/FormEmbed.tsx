@@ -92,7 +92,7 @@ export const FormEmbedConfig: ComponentConfig<FormEmbedProps> = {
   render: ({ formSlug, heading, puck }) => {
     const isEditing = puck?.isEditing;
     return (
-      <section className="px-6 py-12 max-w-2xl mx-auto">
+      <section className="px-4 py-10 max-w-2xl mx-auto sm:px-6 sm:py-12">
         {heading && <h2 className="text-2xl font-bold text-center mb-6">{heading}</h2>}
         {isEditing ? (
           <div className="rounded-lg border-2 border-dashed border-brand-primary/30 p-8 text-center">

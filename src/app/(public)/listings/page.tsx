@@ -1,33 +1,68 @@
-import Link from "next/link";
+export const dynamic = "force-dynamic";
 
-export default function ListingsPage() {
-  return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="mx-auto flex h-16 max-w-7xl items-center px-6">
-          <Link href="/" className="text-xl font-bold text-brand-primary">SRP Real Estate</Link>
-        </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-6 py-20 space-y-8">
-        <h1 className="text-4xl font-bold">Property Listings</h1>
-        <p className="text-muted-foreground">
-          Property search powered by IDX / RESO API. Configure your listing provider in Super Admin settings to enable live MLS data.
-        </p>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-xl border overflow-hidden">
-              <div className="aspect-video bg-muted flex items-center justify-center text-muted-foreground">
-                Listing Photo
-              </div>
-              <div className="p-4 space-y-1">
-                <p className="font-semibold">$425,000</p>
-                <p className="text-sm text-muted-foreground">123 Example St, City, ST 12345</p>
-                <p className="text-xs text-muted-foreground">3 bed &middot; 2 bath &middot; 1,800 sqft</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
-  );
+import type { Metadata } from "next";
+import type { Data } from "@puckeditor/core";
+import { PuckRendererServer as PuckRenderer } from "@/lib/puck/renderer-server";
+import { loadWebsitePage } from "@/lib/website/load-page";
+import { ListingsGridConfig } from "@/lib/puck/components/ListingsGrid";
+
+// `/listings` is now a CMS-managed Puck page (slug = "listings"). We can't
+// rely on the (public)/[slug]/page.tsx catch-all here because Next gives
+// literal folders routing priority — and we still need this folder for the
+// `[id]` detail route. Hence this thin wrapper that resolves the same
+// `listings` slug from `website_pages`.
+//
+// Fallback: if the seed migration hasn't run yet (or someone deleted the
+// row out of band), we render a standalone ListingsGrid block with its
+// default props so the URL never 404s. Same defensive posture as the home
+// page fallback in (public)/page.tsx.
+
+const LISTINGS_SLUG = "listings";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}): Promise<Metadata> {
+  const { preview } = await searchParams;
+  const page = await loadWebsitePage(LISTINGS_SLUG, {
+    preview: preview === "draft",
+  });
+  if (!page) {
+    return {
+      title: ListingsGridConfig.defaultProps?.heading ?? "Property Listings",
+    };
+  }
+  return {
+    title: page.title,
+    description: page.meta_description ?? undefined,
+  };
+}
+
+export default async function ListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const { preview } = await searchParams;
+  const page = await loadWebsitePage(LISTINGS_SLUG, {
+    preview: preview === "draft",
+  });
+
+  if (page) return <PuckRenderer data={page.data} />;
+
+  const fallbackData: Data = {
+    content: [
+      {
+        type: "ListingsGrid",
+        props: {
+          id: "ListingsGrid-listings-fallback",
+          ...ListingsGridConfig.defaultProps,
+        },
+      },
+    ],
+    root: { props: {} },
+  };
+
+  return <PuckRenderer data={fallbackData} />;
 }

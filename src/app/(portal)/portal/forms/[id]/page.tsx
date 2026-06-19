@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { FormBuilderTabs } from "@/components/portal/forms/form-builder-tabs";
 import { ExternalLink } from "lucide-react";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 export default async function FormEditorPage({
   params,
@@ -43,6 +44,8 @@ export default async function FormEditorPage({
     .select("*")
     .eq("form_id", id)
     .order("submitted_at", { ascending: false });
+
+  const aiEnabled = await isIntegrationEnabled("ai");
 
   return (
     <div className="space-y-6">
@@ -87,6 +90,7 @@ export default async function FormEditorPage({
         publishedVersionId={form.published_version_id}
         submissions={submissions || []}
         initialTab={initialTab}
+        aiEnabled={aiEnabled}
       />
     </div>
   );

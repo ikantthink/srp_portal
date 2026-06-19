@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { GOOGLE_FONTS, googleFontUrl } from "@/lib/fonts";
 import { deriveSidebarColors } from "@/lib/color-utils";
 import { applyTheme } from "@/hooks/use-brand-theme";
+import { updateBrandSettings } from "@/actions/brand";
 import type { BrandSettings } from "@/types/database";
 import { Loader2, RotateCcw, Upload, X } from "lucide-react";
 
@@ -220,6 +221,7 @@ export function BrandingForm({
 }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     primary_color: settings?.primary_color || "#1e40af",
     secondary_color: settings?.secondary_color || "#7c3aed",
@@ -249,16 +251,14 @@ export function BrandingForm({
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
+    setError(null);
 
-    const supabase = createClient();
+    const result = await updateBrandSettings(form);
 
-    if (settings?.id) {
-      await supabase
-        .from("brand_settings")
-        .update(form)
-        .eq("id", settings.id);
-    } else {
-      await supabase.from("brand_settings").insert(form);
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
     }
 
     applyTheme(form);
@@ -478,6 +478,12 @@ export function BrandingForm({
         onHeadingChange={(v) => updateField("font_heading", v)}
         onBodyChange={(v) => updateField("font_body", v)}
       />
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={loading}>

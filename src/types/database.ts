@@ -90,6 +90,7 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   slug: string;
+  sidebar_collapsed: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -322,6 +323,50 @@ export interface SiteSettings {
   short_domain: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  updated_at: string;
+}
+
+export interface MediaFolder {
+  id: string;
+  name: string;
+  slug: string;
+  is_system: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined: file count (optional)
+  file_count?: number;
+}
+
+export interface MediaTag {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+export interface MediaFile {
+  id: string;
+  folder_id: string;
+  storage_path: string;
+  filename: string;
+  display_name: string | null;
+  mime_type: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // Computed / joined
+  public_url?: string;
+  tags?: MediaTag[];
+  folder?: MediaFolder;
 }
 
 export interface BrandSettings {

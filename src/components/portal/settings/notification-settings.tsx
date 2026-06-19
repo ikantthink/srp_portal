@@ -7,12 +7,14 @@ interface NotificationSettingsProps {
   userId: string;
   eventTypes: { key: string; label: string }[];
   currentSettings: { event_type: string; channel: string; enabled: boolean }[];
+  smsEnabled?: boolean;
 }
 
 export function NotificationSettings({
   userId,
   eventTypes,
   currentSettings,
+  smsEnabled = true,
 }: NotificationSettingsProps) {
   const [settings, setSettings] = useState<Record<string, { email: boolean; sms: boolean }>>(
     () => {
@@ -52,15 +54,22 @@ export function NotificationSettings({
     );
   }
 
+  const gridCols = smsEnabled ? "grid-cols-3" : "grid-cols-2";
+
   return (
     <div className="space-y-1">
-      <div className="grid grid-cols-3 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground">
+      {!smsEnabled && (
+        <p className="px-4 pb-2 text-xs text-muted-foreground">
+          SMS notifications are disabled by your administrator.
+        </p>
+      )}
+      <div className={`grid ${gridCols} gap-4 px-4 py-2 text-sm font-medium text-muted-foreground`}>
         <div>Event</div>
         <div className="text-center">Email</div>
-        <div className="text-center">SMS</div>
+        {smsEnabled && <div className="text-center">SMS</div>}
       </div>
       {eventTypes.map((et) => (
-        <div key={et.key} className="grid grid-cols-3 gap-4 rounded-lg px-4 py-3 hover:bg-muted/50">
+        <div key={et.key} className={`grid ${gridCols} gap-4 rounded-lg px-4 py-3 hover:bg-muted/50`}>
           <div className="text-sm font-medium">{et.label}</div>
           <div className="text-center">
             <button
@@ -76,20 +85,22 @@ export function NotificationSettings({
               />
             </button>
           </div>
-          <div className="text-center">
-            <button
-              onClick={() => toggle(et.key, "sms")}
-              className={`h-6 w-11 rounded-full transition-colors ${
-                settings[et.key]?.sms ? "bg-brand-primary" : "bg-border"
-              }`}
-            >
-              <span
-                className={`block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  settings[et.key]?.sms ? "translate-x-5" : "translate-x-0.5"
+          {smsEnabled && (
+            <div className="text-center">
+              <button
+                onClick={() => toggle(et.key, "sms")}
+                className={`h-6 w-11 rounded-full transition-colors ${
+                  settings[et.key]?.sms ? "bg-brand-primary" : "bg-border"
                 }`}
-              />
-            </button>
-          </div>
+              >
+                <span
+                  className={`block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    settings[et.key]?.sms ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>

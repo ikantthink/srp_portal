@@ -2,8 +2,13 @@
 
 import { generateText } from "ai";
 import { gateway } from "@/lib/ai/gateway";
+import { isIntegrationEnabled } from "@/lib/integrations/status";
 
 export async function generateNewsletterDraft(prompt: string) {
+  if (!(await isIntegrationEnabled("ai"))) {
+    return { error: "AI is currently disabled." };
+  }
+
   const { text } = await generateText({
     model: gateway("openai/gpt-4o"),
     system: `You are a real estate newsletter writer. Write engaging, professional newsletter content.

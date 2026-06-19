@@ -19,6 +19,7 @@ interface PublicFormRendererProps {
     redirect_url?: string;
   };
   isEmbed?: boolean;
+  listingsEnabled?: boolean;
 }
 
 export function PublicFormRenderer({
@@ -29,6 +30,7 @@ export function PublicFormRenderer({
   successPageData,
   settings,
   isEmbed,
+  listingsEnabled = true,
 }: PublicFormRendererProps) {
   const [submitted, setSubmitted] = useState(false);
   const [submissionData, setSubmissionData] = useState<Record<string, unknown>>({});
@@ -99,7 +101,7 @@ export function PublicFormRenderer({
     if (successPageData && settings.success_behavior === "show_page") {
       return (
         <div ref={containerRef} className={isEmbed ? "" : "min-h-screen"}>
-          <PuckRenderer data={successPageData as Data} />
+          <PuckRenderer data={successPageData as Data} listingsEnabled={listingsEnabled} />
         </div>
       );
     }
@@ -140,7 +142,7 @@ export function PublicFormRenderer({
   if (pageData && !isEmbed) {
     return (
       <div className="min-h-screen">
-        <PuckRenderer data={pageData as Data} />
+        <PuckRenderer data={pageData as Data} listingsEnabled={listingsEnabled} />
       </div>
     );
   }

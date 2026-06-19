@@ -12,16 +12,25 @@ import {
   deleteBlockPreset,
   type BlockPreset,
 } from "@/actions/block-presets";
-import { Pencil, Trash2, Plus, Folder, X } from "lucide-react";
+import { Pencil, Trash2, Plus, Folder, X, Blocks } from "lucide-react";
+import { BlockPreview } from "@/components/portal/settings/block-preview";
+
+export interface DefaultBlock {
+  type: string;
+  label: string;
+  defaultProps: Record<string, unknown>;
+}
 
 interface BlockPresetsManagerProps {
   initialPresets: BlockPreset[];
   componentTypes: string[];
+  defaultBlocks?: DefaultBlock[];
 }
 
 export function BlockPresetsManager({
   initialPresets,
   componentTypes,
+  defaultBlocks = [],
 }: BlockPresetsManagerProps) {
   const [presets, setPresets] = useState(initialPresets);
   const [showCreate, setShowCreate] = useState(false);
@@ -56,11 +65,20 @@ export function BlockPresetsManager({
     }
   }
 
+  const filterTerm = filter.trim().toLowerCase();
+  const filteredDefaults = filterTerm
+    ? defaultBlocks.filter(
+        (b) =>
+          b.type.toLowerCase().includes(filterTerm) ||
+          b.label.toLowerCase().includes(filterTerm)
+      )
+    : defaultBlocks;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
         <SearchInput
-          placeholder="Search presets..."
+          placeholder="Search blocks and presets..."
           value={filter}
           onChange={setFilter}
           className="max-w-xs"
@@ -83,67 +101,110 @@ export function BlockPresetsManager({
         />
       )}
 
-      {Object.keys(grouped).length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed p-12 text-center text-muted-foreground">
-          {presets.length === 0
-            ? "No presets yet. Create one to get started."
-            : "No presets match your search."}
-        </div>
-      ) : (
-        Object.entries(grouped).map(([folder, items]) => (
-          <div key={folder} className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-              <Folder className="h-4 w-4" />
-              {folder}
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((preset) =>
-                editingId === preset.id ? (
-                  <PresetForm
-                    key={preset.id}
-                    componentTypes={componentTypes}
-                    existingFolders={folders}
-                    preset={preset}
-                    onClose={() => setEditingId(null)}
-                    onSaved={(updated) => {
-                      setPresets((prev) =>
-                        prev.map((p) => (p.id === updated.id ? updated : p))
-                      );
-                      setEditingId(null);
-                    }}
-                  />
-                ) : (
-                  <div
-                    key={preset.id}
-                    className="flex items-start justify-between rounded-lg border bg-card p-4"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{preset.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Base: {preset.component_type}
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setEditingId(preset.id)}
-                        className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(preset.id)}
-                        className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-muted"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
+      {filteredDefaults.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <Blocks className="h-4 w-4" />
+            Default Blocks
           </div>
-        ))
+          <p className="text-xs text-muted-foreground">
+            Built-in page-builder components. Themed using your website settings.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredDefaults.map((block) => (
+              <div
+                key={block.type}
+                className="space-y-2 rounded-lg border bg-card p-3"
+              >
+                <BlockPreview type={block.type} props={block.defaultProps} />
+                <div>
+                  <p className="text-sm font-medium">{block.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Base: {block.type}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+          <Folder className="h-4 w-4" />
+          Saved Presets
+        </div>
+
+        {Object.keys(grouped).length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed p-12 text-center text-muted-foreground">
+            {presets.length === 0
+              ? "No presets yet. Create one to save a configured block for reuse."
+              : "No presets match your search."}
+          </div>
+        ) : (
+          Object.entries(grouped).map(([folder, items]) => (
+            <div key={folder} className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Folder className="h-3.5 w-3.5" />
+                {folder}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((preset) =>
+                  editingId === preset.id ? (
+                    <PresetForm
+                      key={preset.id}
+                      componentTypes={componentTypes}
+                      existingFolders={folders}
+                      preset={preset}
+                      onClose={() => setEditingId(null)}
+                      onSaved={(updated) => {
+                        setPresets((prev) =>
+                          prev.map((p) => (p.id === updated.id ? updated : p))
+                        );
+                        setEditingId(null);
+                      }}
+                    />
+                  ) : (
+                    <div
+                      key={preset.id}
+                      className="space-y-2 rounded-lg border bg-card p-3"
+                    >
+                      <BlockPreview
+                        type={preset.component_type}
+                        props={preset.props}
+                      />
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="truncate text-sm font-medium">
+                            {preset.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            Base: {preset.component_type}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            onClick={() => setEditingId(preset.id)}
+                            className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(preset.id)}
+                            className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-muted"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
