@@ -232,6 +232,13 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
       ...mediaUrlField({ accept: "image", folderSlug: "website" }),
       label: "Background image",
     },
+    // Overridden/omitted per-render by `resolveHeroFlexFields` based on
+    // whether a still background is actually set — this static entry only
+    // exists to satisfy `Fields<HeroFlexProps>`, which requires every prop.
+    backgroundPositionY: {
+      ...backgroundPositionField(),
+      label: "Image position",
+    },
     backgroundVideo: {
       ...mediaUrlField({
         accept: "video",
