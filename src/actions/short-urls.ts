@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getShortDomain } from "@/lib/site-settings";
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
@@ -79,6 +80,38 @@ export async function createShortUrl(targetUrl: string, title?: string) {
   return { shortUrl: data };
 }
 
+export async function updateShortUrl(
+  id: string,
+  targetUrl: string,
+  title?: string
+) {
+  if (!isAllowedTargetUrl(targetUrl)) {
+    return { error: "Target URL must use http or https" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase
+    .from("short_urls")
+    .update({
+      target_url: targetUrl,
+      title: title || null,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/portal/url-shortener");
+  return { shortUrl: data };
+}
+
 export async function deleteShortUrl(id: string) {
   const supabase = await createClient();
   const {
@@ -122,10 +155,12 @@ export async function createLinkCardShortUrl(
 
   if (existing) return { shortUrl: existing };
 
+  const configuredDomain = await getShortDomain();
   const h = await headers();
-  const host = h.get("host") ?? "";
-  const proto =
-    h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const host = configuredDomain ?? h.get("host") ?? "";
+  const proto = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host)
+    ? "http"
+    : "https";
   const target = host ? `${proto}://${host}/c/${slug}` : `/c/${slug}`;
   const code = await generateCode(supabase, "l");
 

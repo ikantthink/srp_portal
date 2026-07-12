@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { createShortUrl, deleteShortUrl } from "@/actions/short-urls";
+import {
+  createShortUrl,
+  updateShortUrl,
+  deleteShortUrl,
+} from "@/actions/short-urls";
 import type { ShortUrl } from "@/types/database";
 import {
   Plus,
@@ -18,6 +22,7 @@ import {
   Trash2,
   ExternalLink,
   LinkIcon,
+  Pencil,
 } from "lucide-react";
 
 interface UrlShortenerManagerProps {
@@ -30,22 +35,31 @@ export function UrlShortenerManager({
   shortDomain,
 }: UrlShortenerManagerProps) {
   const [showCreate, setShowCreate] = useState(false);
+  const [editingUrl, setEditingUrl] = useState<ShortUrl | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function handleCreate(formData: FormData) {
+  function closeModal() {
+    setShowCreate(false);
+    setEditingUrl(null);
+    setError(null);
+  }
+
+  async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     const targetUrl = formData.get("target_url") as string;
     const title = formData.get("title") as string;
-    const result = await createShortUrl(targetUrl, title || undefined);
+    const result = editingUrl
+      ? await updateShortUrl(editingUrl.id, targetUrl, title || undefined)
+      : await createShortUrl(targetUrl, title || undefined);
     if (result.error) {
       setError(result.error);
       setLoading(false);
     } else {
-      setShowCreate(false);
+      closeModal();
       setLoading(false);
     }
   }
@@ -56,11 +70,17 @@ export function UrlShortenerManager({
     setDeletingId(null);
   }
 
-  function copyToClipboard(code: string, id: string) {
+  function copyToClipboard(
+    code: string,
+    prefix: ShortUrl["prefix"],
+    id: string
+  ) {
     const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(shortDomain)
       ? "http"
       : "https";
-    navigator.clipboard.writeText(`${scheme}://${shortDomain}/s/${code}`);
+    navigator.clipboard.writeText(
+      `${scheme}://${shortDomain}/${prefix}/${code}`
+    );
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }
@@ -89,10 +109,16 @@ export function UrlShortenerManager({
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <code className="rounded bg-muted px-2 py-0.5 text-xs">
-            {shortDomain}/s/{row.original.code}
+            {shortDomain}/{row.original.prefix}/{row.original.code}
           </code>
           <button
-            onClick={() => copyToClipboard(row.original.code, row.original.id)}
+            onClick={() =>
+              copyToClipboard(
+                row.original.code,
+                row.original.prefix,
+                row.original.id
+              )
+            }
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             {copiedId === row.original.id ? (
@@ -136,38 +162,60 @@ export function UrlShortenerManager({
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleDelete(row.original.id)}
-          disabled={deletingId === row.original.id}
-          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-        >
-          {deletingId === row.original.id ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setError(null);
+              setEditingUrl(row.original);
+            }}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(row.original.id)}
+            disabled={deletingId === row.original.id}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          >
+            {deletingId === row.original.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       ),
     },
   ];
 
   const toolbarContent = (
-    <Button onClick={() => setShowCreate(true)}>
+    <Button
+      onClick={() => {
+        setError(null);
+        setShowCreate(true);
+      }}
+    >
       <Plus className="mr-2 h-4 w-4" />
       New Short URL
     </Button>
   );
 
+  const modalOpen = showCreate || editingUrl;
+
   return (
     <>
-      {showCreate && (
+      {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-lg rounded-xl bg-card p-6 shadow-lg">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Create Short URL</h2>
-              <button onClick={() => { setShowCreate(false); setError(null); }}>
+              <h2 className="text-lg font-semibold">
+                {showCreate ? "Create Short URL" : "Edit Short URL"}
+              </h2>
+              <button onClick={closeModal}>
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
@@ -178,7 +226,15 @@ export function UrlShortenerManager({
               </div>
             )}
 
-            <form action={handleCreate} className="space-y-4">
+            <form action={handleSubmit} className="space-y-4">
+              {editingUrl && (
+                <div className="space-y-2">
+                  <Label>Short URL</Label>
+                  <code className="block rounded bg-muted px-2 py-1.5 text-xs">
+                    {shortDomain}/{editingUrl.prefix}/{editingUrl.code}
+                  </code>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="target_url">Destination URL *</Label>
                 <Input
@@ -186,6 +242,7 @@ export function UrlShortenerManager({
                   name="target_url"
                   type="url"
                   placeholder="https://example.com/long-page-url"
+                  defaultValue={editingUrl?.target_url ?? ""}
                   required
                 />
               </div>
@@ -195,21 +252,18 @@ export function UrlShortenerManager({
                   id="title"
                   name="title"
                   placeholder="My marketing page"
+                  defaultValue={editingUrl?.title ?? ""}
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setShowCreate(false); setError(null); }}
-                >
+                <Button type="button" variant="outline" onClick={closeModal}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Create
+                  {showCreate ? "Create" : "Save"}
                 </Button>
               </div>
             </form>

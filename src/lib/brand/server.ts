@@ -34,6 +34,7 @@ export interface ResolvedBrand {
   sidebar_muted: string;
   font_heading: string;
   font_body: string;
+  favicon_url: string | null;
 }
 
 // Defaults mirror those baked into `globals.css` so a missing row or a
@@ -49,6 +50,7 @@ const DEFAULTS: ResolvedBrand = {
   sidebar_muted: "#1e293b",
   font_heading: "Inter",
   font_body: "Inter",
+  favicon_url: null,
 };
 
 export const getBrandSettings = cache(async (): Promise<ResolvedBrand> => {
@@ -77,6 +79,7 @@ export const getBrandSettings = cache(async (): Promise<ResolvedBrand> => {
       sidebar_muted: data.sidebar_muted ?? derived.muted,
       font_heading: data.font_heading ?? DEFAULTS.font_heading,
       font_body: data.font_body ?? DEFAULTS.font_body,
+      favicon_url: data.favicon_url ?? DEFAULTS.favicon_url,
     };
   } catch {
     // Network/RLS errors here are non-fatal — the CSS defaults in

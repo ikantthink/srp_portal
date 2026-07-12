@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BrandThemeStyle } from "@/components/shared/brand-theme-style";
+import { getBrandSettings } from "@/lib/brand/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,10 +14,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "SRP Real Estate",
-  description: "Your trusted real estate team portal",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await getBrandSettings();
+  return {
+    title: "SRP Real Estate",
+    description: "Your trusted real estate team portal",
+    icons: brand.favicon_url ? { icon: brand.favicon_url } : undefined,
+  };
+}
 
 export default function RootLayout({
   children,
