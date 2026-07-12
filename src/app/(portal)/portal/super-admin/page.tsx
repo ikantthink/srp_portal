@@ -52,6 +52,12 @@ const groups: Group[] = [
         href: "/portal/super-admin/listings",
         icon: Building,
       },
+      {
+        title: "Google Reviews",
+        description: "Places or Business Profile API credentials",
+        href: "/portal/super-admin/google-reviews",
+        icon: Building,
+      },
     ],
   },
   {

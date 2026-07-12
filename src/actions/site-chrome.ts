@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import type { MainNavProps, NavVariant } from "@/lib/puck/components/nav-variant";
 import { mergeNavVariant } from "@/lib/puck/components/nav-variant";
@@ -11,31 +12,6 @@ import {
   SITE_NAV_VARIANTS_KEY,
   listNavVariants,
 } from "@/lib/site-chrome";
-
-type Role = "user" | "admin" | "super_admin";
-
-/**
- * Common admin-only gate. Returns `{ error }` when the caller is not an
- * admin/super_admin so each action can early-out with a consistent shape.
- */
-async function requireAdmin(): Promise<{ error: string } | { ok: true }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
-
-  const { data: roleRow } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-  const role = (roleRow?.role as Role) ?? "user";
-  if (role !== "admin" && role !== "super_admin") {
-    return { error: "Forbidden" };
-  }
-  return { ok: true };
-}
 
 async function upsertSetting(key: string, value: unknown) {
   const supabase = await createClient();

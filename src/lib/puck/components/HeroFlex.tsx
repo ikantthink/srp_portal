@@ -1,9 +1,11 @@
-import type { ComponentConfig } from "@puckeditor/core";
+import type { ComponentConfig, Fields } from "@puckeditor/core";
 import { mediaUrlField } from "../fields/media-url-field";
+import { backgroundPositionField } from "../fields/background-position-field";
 import { wysiwygField } from "../fields/wysiwyg-field";
 import { colorField } from "../fields/color-field";
 import { FONT_OPTIONS } from "../fields/font-options";
 import { stripDangerousTags } from "../fields/sanitize-html";
+import { toBackgroundPosition, heroFlexStillBackground } from "./hero-flex-background-position";
 
 /**
  * HeroFlex — a single hero block that supports either an image OR video
@@ -25,6 +27,8 @@ import { stripDangerousTags } from "../fields/sanitize-html";
 export type HeroFlexProps = {
   backgroundType: "image" | "video";
   backgroundImage: string;
+  /** Vertical focal point for cover backgrounds (0 = top, 50 = center, 100 = bottom). */
+  backgroundPositionY: number;
   backgroundVideo: string;
   posterUrl: string;
   videoPlayback: "loopMuted" | "loop" | "playOnce";
@@ -156,6 +160,61 @@ function getVimeoEmbed(url: string, autoplay: boolean, loop: boolean, muted: boo
 function clampOpacity(v: number): number {
   if (typeof v !== "number" || Number.isNaN(v)) return 0;
   return Math.max(0, Math.min(100, v));
+}
+
+function heroFlexFieldsProps(data: { props?: HeroFlexProps } & Partial<HeroFlexProps>): HeroFlexProps {
+  return (data.props ?? data) as HeroFlexProps;
+}
+
+function resolveHeroFlexFields(
+  props: HeroFlexProps,
+  fields: Fields<HeroFlexProps>,
+): Fields<HeroFlexProps> {
+  const stillBackground = heroFlexStillBackground(props);
+  const {
+    backgroundPositionY: _injectedPositionField,
+    backgroundType,
+    backgroundImage,
+    backgroundVideo,
+    posterUrl,
+    videoPlayback,
+    ...rest
+  } = fields;
+
+  // Without a still image there's nothing for the "Image position" control
+  // to act on, so we simply omit it. All other fields (including the
+  // background type/image/video selectors) must stay visible — otherwise
+  // there's no way to add a background in the first place.
+  if (!stillBackground) {
+    return fields;
+  }
+
+  const positionedField = {
+    ...backgroundPositionField(),
+    label: "Image position",
+  };
+
+  if (props.backgroundType === "video") {
+    return {
+      backgroundType,
+      backgroundImage,
+      backgroundVideo,
+      posterUrl,
+      backgroundPositionY: positionedField,
+      videoPlayback,
+      ...rest,
+    };
+  }
+
+  return {
+    backgroundType,
+    backgroundImage,
+    backgroundPositionY: positionedField,
+    backgroundVideo,
+    posterUrl,
+    videoPlayback,
+    ...rest,
+  };
 }
 
 export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
@@ -293,9 +352,12 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
       label: "Content",
     },
   },
+  resolveFields: (data, { fields }) =>
+    resolveHeroFlexFields(heroFlexFieldsProps(data), fields as Fields<HeroFlexProps>),
   defaultProps: {
     backgroundType: "image",
     backgroundImage: "",
+    backgroundPositionY: 50,
     backgroundVideo: "",
     posterUrl: "",
     videoPlayback: "loopMuted",
@@ -319,6 +381,7 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
   render: ({
     backgroundType,
     backgroundImage,
+    backgroundPositionY,
     backgroundVideo,
     posterUrl,
     videoPlayback,
@@ -346,6 +409,7 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
     // The poster doubles as the still-image fallback for image-mode and the
     // visible background while the video loads in video-mode.
     const stillBackground = isVideo ? posterUrl : backgroundImage;
+    const backgroundPosition = toBackgroundPosition(backgroundPositionY);
 
     // Render trust: `content` is sanitised by the WYSIWYG field on every
     // edit. We still run a regex sweep here as a backstop in case someone
@@ -381,7 +445,7 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
         style={{
           backgroundImage: stillBackground ? `url(${stillBackground})` : undefined,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition,
           backgroundColor: stillBackground ? undefined : "var(--brand-primary)",
           ...heightStyle,
         }}
@@ -393,6 +457,7 @@ export const HeroFlexConfig: ComponentConfig<HeroFlexProps> = {
             {kind === "mp4" ? (
               <video
                 className="h-full w-full object-cover"
+                style={{ objectPosition: backgroundPosition }}
                 src={backgroundVideo}
                 poster={posterUrl || undefined}
                 autoPlay

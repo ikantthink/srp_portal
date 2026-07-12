@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import type { LeadTag } from "@/types/database";
 
@@ -14,6 +15,9 @@ export async function listLeadTags(): Promise<LeadTag[]> {
 }
 
 export async function createLeadTag(name: string, color: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lead_tags")
@@ -26,6 +30,9 @@ export async function createLeadTag(name: string, color: string) {
 }
 
 export async function updateLeadTag(id: string, name: string, color: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_tags")
@@ -37,6 +44,9 @@ export async function updateLeadTag(id: string, name: string, color: string) {
 }
 
 export async function deleteLeadTag(id: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_tags")
@@ -48,6 +58,9 @@ export async function deleteLeadTag(id: string) {
 }
 
 export async function addTagToLead(leadId: string, tagId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_tag_assignments")
@@ -58,6 +71,9 @@ export async function addTagToLead(leadId: string, tagId: string) {
 }
 
 export async function removeTagFromLead(leadId: string, tagId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("lead_tag_assignments")

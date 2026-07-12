@@ -1,8 +1,9 @@
 "use client";
 
 import type { ComponentConfig } from "@puckeditor/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useResponsivePerView } from "../use-responsive-per-view";
 
 export type YouTubeFeedProps = {
   heading: string;
@@ -11,9 +12,11 @@ export type YouTubeFeedProps = {
   videoIds: string;
   count: number;
   order: "date" | "viewCount" | "relevance";
-  cardWidth: "sm" | "md" | "lg";
+  perView: number;
+  gap: number;
   showTitle: boolean;
   showMeta: boolean;
+  autoScrollSpeed: number;
 };
 
 interface Video {
@@ -24,11 +27,10 @@ interface Video {
   thumbnail: string;
 }
 
-const CARD_WIDTH_PX: Record<YouTubeFeedProps["cardWidth"], number> = {
-  sm: 240,
-  md: 320,
-  lg: 400,
-};
+function clamp(n: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
 
 export const YouTubeFeedConfig: ComponentConfig<YouTubeFeedProps> = {
   fields: {
@@ -53,15 +55,8 @@ export const YouTubeFeedConfig: ComponentConfig<YouTubeFeedProps> = {
         { label: "Relevance", value: "relevance" },
       ],
     },
-    cardWidth: {
-      type: "radio",
-      label: "Card size",
-      options: [
-        { label: "Small", value: "sm" },
-        { label: "Medium", value: "md" },
-        { label: "Large", value: "lg" },
-      ],
-    },
+    perView: { type: "number", label: "Videos shown at once (1–6)" },
+    gap: { type: "number", label: "Gap between videos (px)" },
     showTitle: {
       type: "radio",
       label: "Show title",
@@ -78,6 +73,10 @@ export const YouTubeFeedConfig: ComponentConfig<YouTubeFeedProps> = {
         { label: "No", value: false },
       ],
     },
+    autoScrollSpeed: {
+      type: "number",
+      label: "Autoplay speed in seconds (0 = off)",
+    },
   },
   defaultProps: {
     heading: "",
@@ -86,9 +85,11 @@ export const YouTubeFeedConfig: ComponentConfig<YouTubeFeedProps> = {
     videoIds: "",
     count: 12,
     order: "date",
-    cardWidth: "md",
+    perView: 4,
+    gap: 16,
     showTitle: true,
     showMeta: true,
+    autoScrollSpeed: 0,
   },
   render: (props) => <YouTubeFeedView {...props} />,
 };
@@ -121,17 +122,12 @@ interface FetchState {
 const INITIAL_FETCH_STATE: FetchState = { forQuery: null, videos: [], error: null };
 
 function YouTubeFeedView(props: YouTubeFeedProps) {
-  const { heading, cardWidth, showTitle, showMeta } = props;
-  // Bundle the per-query response into a single piece of state so we never
-  // need to set multiple flags synchronously inside the effect body — the
-  // react-hooks/set-state-in-effect rule disallows that pattern. `loading`
-  // is then derived from "the current state was loaded for the current
-  // query".
+  const { heading, showTitle, showMeta, autoScrollSpeed } = props;
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
-  const listRef = useRef<HTMLUListElement | null>(null);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const widthPx = CARD_WIDTH_PX[cardWidth];
+  const maxPerView = clamp(props.perView, 1, 6, 4);
+  const perView = useResponsivePerView(maxPerView);
+  const gap = clamp(props.gap, 0, 64, 16);
+  const speedMs = clamp(autoScrollSpeed, 0, 120, 0) * 1000;
 
   const query = buildQuery(props);
   const loading = query !== null && fetchState.forQuery !== query;
@@ -161,33 +157,6 @@ function YouTubeFeedView(props: YouTubeFeedProps) {
     };
   }, [query]);
 
-  const updateScrollState = useCallback(() => {
-    const el = listRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth - 1;
-    setCanPrev(el.scrollLeft > 1);
-    setCanNext(el.scrollLeft < max);
-  }, []);
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    updateScrollState();
-    const onScroll = () => updateScrollState();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", updateScrollState);
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", updateScrollState);
-    };
-  }, [updateScrollState, videos.length]);
-
-  function scrollByStep(direction: 1 | -1) {
-    const el = listRef.current;
-    if (!el) return;
-    el.scrollBy({ left: direction * (widthPx + 16), behavior: "smooth" });
-  }
-
   const hasContent = videos.length > 0;
   const isEmpty = !loading && !hasContent;
 
@@ -198,7 +167,7 @@ function YouTubeFeedView(props: YouTubeFeedProps) {
           <h2 className="mb-6 text-2xl font-bold sm:text-3xl">{heading}</h2>
         )}
 
-        {loading && <SkeletonRow widthPx={widthPx} />}
+        {loading && <SkeletonRow perView={perView} gap={gap} />}
 
         {isEmpty && (
           <div className="rounded-lg border-2 border-dashed border-brand-primary/30 p-8 text-center">
@@ -212,102 +181,181 @@ function YouTubeFeedView(props: YouTubeFeedProps) {
         )}
 
         {hasContent && (
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Scroll previous"
-              onClick={() => scrollByStep(-1)}
-              className={`absolute left-2 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-background/90 p-2 shadow-md ring-1 ring-border transition md:flex ${
-                canPrev ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              aria-label="Scroll next"
-              onClick={() => scrollByStep(1)}
-              className={`absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-background/90 p-2 shadow-md ring-1 ring-border transition md:flex ${
-                canNext ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-
-            {/* Edge fades — only visible when there's content to scroll to in
-                that direction. Pointer-events off so they don't intercept
-                card clicks. */}
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-y-0 left-0 z-[5] w-12 bg-gradient-to-r from-background to-transparent transition-opacity ${
-                canPrev ? "opacity-100" : "opacity-0"
-              }`}
-            />
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute inset-y-0 right-0 z-[5] w-12 bg-gradient-to-l from-background to-transparent transition-opacity ${
-                canNext ? "opacity-100" : "opacity-0"
-              }`}
-            />
-
-            <ul
-              ref={listRef}
-              className="flex gap-4 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {/* webkit scrollbar hider — scoped to this list */}
-              <style>{`section ul::-webkit-scrollbar { display: none; }`}</style>
-              {videos.map((v) => (
-                <li
-                  key={v.id}
-                  className="snap-start shrink-0"
-                  style={{ width: widthPx }}
-                >
-                  <a
-                    href={`https://www.youtube.com/watch?v=${v.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block"
-                  >
-                    <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- external thumbnail; next/image would require remotePatterns for i.ytimg.com */}
-                      <img
-                        src={v.thumbnail}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      />
-                    </div>
-                    {showTitle && v.title && (
-                      <p className="mt-2 text-sm font-medium line-clamp-2">{v.title}</p>
-                    )}
-                    {showMeta && (v.publishedAt || v.viewCount !== undefined) && (
-                      <p className="text-xs text-muted-foreground">
-                        {v.publishedAt && relTime(v.publishedAt)}
-                        {v.viewCount !== undefined && (
-                          <>
-                            {v.publishedAt ? " · " : ""}
-                            {formatCount(v.viewCount)} views
-                          </>
-                        )}
-                      </p>
-                    )}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <YouTubeCarousel
+            videos={videos}
+            perView={perView}
+            gap={gap}
+            showTitle={showTitle}
+            showMeta={showMeta}
+            speedMs={speedMs}
+          />
         )}
       </div>
     </section>
   );
 }
 
-function SkeletonRow({ widthPx }: { widthPx: number }) {
+function VideoCard({
+  v,
+  showTitle,
+  showMeta,
+}: {
+  v: Video;
+  showTitle: boolean;
+  showMeta: boolean;
+}) {
   return (
-    <ul className="flex gap-4 overflow-hidden pb-4">
-      {[0, 1, 2].map((i) => (
-        <li key={i} className="shrink-0" style={{ width: widthPx }}>
+    <a
+      href={`https://www.youtube.com/watch?v=${v.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block"
+    >
+      <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element -- external thumbnail; next/image would require remotePatterns for i.ytimg.com */}
+        <img
+          src={v.thumbnail}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+        />
+      </div>
+      {showTitle && v.title && (
+        <p className="mt-2 text-sm font-medium line-clamp-2">{v.title}</p>
+      )}
+      {showMeta && (v.publishedAt || v.viewCount !== undefined) && (
+        <p className="text-xs text-muted-foreground">
+          {v.publishedAt && relTime(v.publishedAt)}
+          {v.viewCount !== undefined && (
+            <>
+              {v.publishedAt ? " · " : ""}
+              {formatCount(v.viewCount)} views
+            </>
+          )}
+        </p>
+      )}
+    </a>
+  );
+}
+
+interface CarouselProps {
+  videos: Video[];
+  perView: number;
+  gap: number;
+  showTitle: boolean;
+  showMeta: boolean;
+  speedMs: number;
+}
+
+// Same infinite-loop carousel pattern as Testimonials: cloned trailing slides +
+// snap-back after transition so the reset is invisible. Slide width is a
+// percentage of the row (100 / perView), so cards always fit the container —
+// no fixed pixel width to overflow or get clipped by the edge fades.
+function YouTubeCarousel({ videos, perView, gap, showTitle, showMeta, speedMs }: CarouselProps) {
+  const n = videos.length;
+  const loopable = n > perView;
+  const [index, setIndex] = useState(0);
+  const [animate, setAnimate] = useState(true);
+  const stepPercent = 100 / perView;
+
+  useEffect(() => setIndex(0), [n, perView]);
+
+  useEffect(() => {
+    if (!loopable || speedMs <= 0) return;
+    const id = setInterval(() => setIndex((i) => i + 1), speedMs);
+    return () => clearInterval(id);
+  }, [loopable, n, speedMs]);
+
+  useEffect(() => {
+    if (animate) return;
+    const r = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(r);
+  }, [animate]);
+
+  if (!loopable) {
+    return (
+      <ul className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(n, perView)}, minmax(0, 1fr))`, gap }}>
+        {videos.map((v) => (
+          <li key={v.id}>
+            <VideoCard v={v} showTitle={showTitle} showMeta={showMeta} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  const slides = [...videos, ...videos.slice(0, perView)];
+
+  function handleTransitionEnd() {
+    if (index >= n) {
+      setAnimate(false);
+      setIndex(0);
+    }
+  }
+
+  function go(dir: 1 | -1) {
+    if (dir === -1 && index <= 0) {
+      setAnimate(false);
+      setIndex(n);
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          setAnimate(true);
+          setIndex(n - 1);
+        })
+      );
+      return;
+    }
+    setIndex((i) => i + dir);
+  }
+
+  return (
+    <div className="relative px-12">
+      <button
+        type="button"
+        aria-label="Scroll previous"
+        onClick={() => go(-1)}
+        className="absolute left-1 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full bg-background/90 p-2 shadow-md ring-1 ring-border transition"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Scroll next"
+        onClick={() => go(1)}
+        className="absolute right-1 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full bg-background/90 p-2 shadow-md ring-1 ring-border transition"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
+      <div className="overflow-hidden">
+        <ul
+          className="flex"
+          style={{
+            transform: `translateX(-${index * stepPercent}%)`,
+            transition: animate ? "transform 500ms ease-in-out" : "none",
+          }}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {slides.map((v, i) => (
+            <li
+              key={`${v.id}-${i}`}
+              className="shrink-0"
+              style={{ flexBasis: `${stepPercent}%`, paddingRight: gap }}
+            >
+              <VideoCard v={v} showTitle={showTitle} showMeta={showMeta} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonRow({ perView, gap }: { perView: number; gap: number }) {
+  return (
+    <ul className="grid" style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))`, gap }}>
+      {Array.from({ length: Math.min(3, perView) }, (_, i) => (
+        <li key={i}>
           <div className="aspect-video animate-pulse rounded-lg bg-muted" />
           <div className="mt-2 h-4 w-3/4 animate-pulse rounded bg-muted" />
           <div className="mt-1 h-3 w-1/2 animate-pulse rounded bg-muted" />

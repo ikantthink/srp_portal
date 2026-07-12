@@ -1,23 +1,61 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeInput } from "@/lib/forms/sanitize";
+import {
+  isPublishedFormVersion,
+  validateSubmissionPayload,
+} from "@/lib/forms/validate-submission";
 import { sendEmail } from "@/lib/email/resend";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { render } from "@react-email/components";
 import FormResponse from "@/../emails/FormResponse";
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIp(request);
+    if (!rateLimit(`forms-submit:${ip}`, 10, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const { form_id, version_id, data } = await request.json();
 
     if (!form_id || !version_id || !data) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const sanitized = sanitizeInput(data) as Record<string, unknown>;
-
     const supabase = createAdminClient();
 
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || null;
+    const { data: form } = await supabase
+      .from("forms")
+      .select("id, status, published_version_id, name, created_by")
+      .eq("id", form_id)
+      .single();
+
+    if (!form || !isPublishedFormVersion(form, version_id)) {
+      return NextResponse.json({ error: "Form not found" }, { status: 404 });
+    }
+
+    const { data: version } = await supabase
+      .from("form_versions")
+      .select("settings, schema")
+      .eq("id", version_id)
+      .eq("form_id", form_id)
+      .single();
+
+    if (!version) {
+      return NextResponse.json({ error: "Form not found" }, { status: 404 });
+    }
+
+    const validated = validateSubmissionPayload(
+      data as Record<string, unknown>,
+      (version.schema || {}) as { fields?: Array<{ id: string; type: string; label: string; required: boolean }> }
+    );
+    if ("error" in validated) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
+    const sanitized = sanitizeInput(validated.data) as Record<string, unknown>;
+
     const userAgent = request.headers.get("user-agent") || null;
 
     const { error } = await supabase.from("form_submissions").insert({

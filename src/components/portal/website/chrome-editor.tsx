@@ -2862,7 +2862,7 @@ function SocialBlockBody({
       <p className="text-[10px] text-muted-foreground">
         One per line, formatted as <code>platform|https://…</code>. Renders as
         an icon. Known platforms: facebook, instagram, twitter, x, linkedin,
-        youtube, tiktok, github, pinterest, snapchat, whatsapp. Anything else
+        youtube, tiktok, github, pinterest, snapchat, whatsapp, zillow. Anything else
         falls back to a generic globe icon.
       </p>
     </div>

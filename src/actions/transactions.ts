@@ -1,10 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createTransaction(formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: transaction, error } = await supabase
@@ -38,6 +42,9 @@ export async function createTransaction(formData: FormData) {
 }
 
 export async function updateTransaction(id: string, formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -65,6 +72,9 @@ export async function updateMilestone(
   id: string,
   data: { status: string; completed_date?: string | null; notes?: string }
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -83,6 +93,9 @@ export async function updateMilestone(
 }
 
 export async function addParty(transactionId: string, formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase.from("transaction_parties").insert({
@@ -101,6 +114,9 @@ export async function addParty(transactionId: string, formData: FormData) {
 }
 
 export async function deleteTransaction(id: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase.from("transactions").delete().eq("id", id);
   if (error) return { error: error.message };

@@ -3,8 +3,12 @@
 import { generateText } from "ai";
 import { gateway } from "@/lib/ai/gateway";
 import { isIntegrationEnabled } from "@/lib/integrations/status";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 
 export async function generateNewsletterDraft(prompt: string) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   if (!(await isIntegrationEnabled("ai"))) {
     return { error: "AI is currently disabled." };
   }

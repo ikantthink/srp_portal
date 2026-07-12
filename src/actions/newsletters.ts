@@ -1,10 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createNewsletter(formData: FormData) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: newsletter, error } = await supabase
@@ -28,6 +32,9 @@ export async function updateNewsletter(
   id: string,
   data: { subject?: string; body_json?: Record<string, unknown>; status?: string; scheduled_at?: string }
 ) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -42,6 +49,9 @@ export async function updateNewsletter(
 }
 
 export async function sendNewsletter(id: string) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: newsletter } = await supabase

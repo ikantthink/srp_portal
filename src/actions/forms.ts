@@ -1,11 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { nanoid } from "nanoid";
 
 export async function createForm(formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase
@@ -61,6 +65,9 @@ export async function saveFormVersion(
     settings: Record<string, unknown>;
   }
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: form } = await supabase
@@ -132,6 +139,9 @@ export async function saveFormVersion(
 }
 
 export async function publishForm(formId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: form } = await supabase
@@ -166,6 +176,9 @@ export async function publishForm(formId: string) {
 }
 
 export async function publishSpecificVersion(formId: string, versionId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   await supabase
@@ -190,6 +203,9 @@ export async function publishSpecificVersion(formId: string, versionId: string) 
 }
 
 export async function deleteForm(formId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   await supabase
@@ -205,6 +221,9 @@ export async function deleteForm(formId: string) {
 }
 
 export async function loadVersionIntoDraft(formId: string, versionId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   await supabase

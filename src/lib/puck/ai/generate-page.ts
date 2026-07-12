@@ -4,8 +4,12 @@ import { generateText } from "ai";
 import { gateway } from "@/lib/ai/gateway";
 import { componentNames } from "../config";
 import { isIntegrationEnabled } from "@/lib/integrations/status";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 
 export async function generatePageData(prompt: string) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   if (!(await isIntegrationEnabled("ai"))) {
     return { error: "AI is currently disabled." };
   }
@@ -23,7 +27,7 @@ Component prop schemas:
 - TextBlock: content (string), alignment ("left"|"center"|"right")
 - ImageGallery: images (string, newline-separated URLs), columns (number)
 - VideoEmbed: url (string), aspectRatio ("16:9"|"4:3"|"1:1")
-- Testimonials: items (string, format: "Name|Quote|Rating" per line)
+- Testimonials: items (string, format: "Name|Quote|Rating" per line), source ("manual"|"google"|"merge"), maxReviews (number 1-50), minRating (number 1-5)
 - CallToAction: heading (string), description (string), buttonText (string), buttonLink (string), variant ("primary"|"secondary"|"accent")
 - ContactInfo: address (string), phone (string), email (string), showMap (boolean)
 - Stats: items (string, format: "Value|Label" per line)

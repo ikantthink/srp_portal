@@ -1,12 +1,16 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 
 export async function saveLinkCardVersion(
   linkCardId: string,
   data: { layout: Record<string, unknown>; widgets: Record<string, unknown>[] }
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase
@@ -50,6 +54,9 @@ export async function saveLinkCardVersion(
 }
 
 export async function rollbackLinkCardVersion(linkCardId: string, versionId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   await supabase
@@ -62,6 +69,9 @@ export async function rollbackLinkCardVersion(linkCardId: string, versionId: str
 }
 
 export async function ensureLinkCard() {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase

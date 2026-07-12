@@ -30,7 +30,20 @@ async function generateCode(
   return nanoid(6);
 }
 
+function isAllowedTargetUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export async function createShortUrl(targetUrl: string, title?: string) {
+  if (!isAllowedTargetUrl(targetUrl)) {
+    return { error: "Target URL must use http or https" };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

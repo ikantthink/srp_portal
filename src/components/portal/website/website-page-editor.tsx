@@ -36,7 +36,7 @@ function firstBlockBaseType(data: Data): string | null {
   return t.split("__")[0];
 }
 
-const AUTOSAVE_DELAY_MS = 1500;
+const AUTOSAVE_DELAY_MS = 5000;
 const SAVED_INDICATOR_MS = 2000;
 
 export function WebsitePageEditor({

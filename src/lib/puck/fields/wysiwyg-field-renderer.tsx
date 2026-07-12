@@ -52,6 +52,13 @@ export function WysiwygFieldRender({
   placeholder?: string;
 }) {
   const editorRef = useRef<HTMLDivElement | null>(null);
+  // Last real (non-collapsed-by-blur) selection range inside the editor.
+  // Native form controls (the font/size <select>s, the color <input>s) steal
+  // focus the moment the user opens them — which clears/collapses the
+  // browser's Selection before our onChange handler runs. We continuously
+  // mirror the live selection here (via `selectionchange`) so we can restore
+  // it just before applying a command from one of those controls.
+  const savedRangeRef = useRef<Range | null>(null);
   // Track the most-recent value we *emitted*, so we can detect when the
   // parent prop changed for an external reason (vs. our own onChange).
   //
@@ -71,6 +78,37 @@ export function WysiwygFieldRender({
     el.innerHTML = value;
     lastEmittedRef.current = value;
   }, [value]);
+
+  // Mirror the live selection while it's inside this editor instance, so we
+  // still have it after focus moves to a toolbar <select>/<input>.
+  useEffect(() => {
+    const captureSelection = () => {
+      const el = editorRef.current;
+      const sel = window.getSelection();
+      if (!el || !sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer)) {
+        savedRangeRef.current = range.cloneRange();
+      }
+    };
+    document.addEventListener("selectionchange", captureSelection);
+    return () => document.removeEventListener("selectionchange", captureSelection);
+  }, []);
+
+  // Re-focus the editor and re-apply the last captured selection. Call this
+  // instead of a bare `el.focus()` before any command that may have been
+  // triggered from a control that stole focus (select/input), otherwise the
+  // command silently targets a collapsed caret instead of the user's pick.
+  const restoreSelection = useCallback(() => {
+    const el = editorRef.current;
+    const sel = window.getSelection();
+    if (!el || !sel) return;
+    el.focus();
+    if (savedRangeRef.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedRangeRef.current);
+    }
+  }, []);
 
   const emit = useCallback(() => {
     const el = editorRef.current;
@@ -107,7 +145,7 @@ export function WysiwygFieldRender({
     (cmd: string, arg?: string) => {
       const el = editorRef.current;
       if (!el) return;
-      el.focus();
+      restoreSelection();
       try {
         document.execCommand(cmd, false, arg);
       } catch {
@@ -117,7 +155,7 @@ export function WysiwygFieldRender({
       emit();
       syncCurrentBlock();
     },
-    [emit, syncCurrentBlock]
+    [emit, syncCurrentBlock, restoreSelection]
   );
 
   // Intercept paste so we sanitise HTML/text *before* it touches the DOM.
@@ -186,6 +224,7 @@ export function WysiwygFieldRender({
     if (!size) return;
     // execCommand("fontSize") only accepts 1-7. Apply via a styled <span>
     // by wrapping the selection ourselves using insertHTML.
+    restoreSelection();
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
       // No selection — store the choice as a CSS variable on the editable

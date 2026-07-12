@@ -1,4 +1,7 @@
 import type { ComponentConfig } from "@puckeditor/core";
+import { wysiwygField } from "../fields/wysiwyg-field";
+import { stripDangerousTags } from "../fields/sanitize-html";
+import { heroVideoContentHtml, heroVideoLegacyHtml } from "./hero-video-content";
 
 // Supported videoUrl formats:
 //   * direct .mp4 (and similar) URL → rendered via <video>
@@ -6,10 +9,15 @@ import type { ComponentConfig } from "@puckeditor/core";
 // Other URLs render as a still placeholder.
 
 export type HeroVideoProps = {
-  heading: string;
-  subheading: string;
-  ctaText: string;
-  ctaLink: string;
+  /** WYSIWYG HTML body (same editor as HeroFlex). */
+  content: string;
+  // Legacy fixed-copy fields, kept optional so already-published blocks still
+  // carry their text. They no longer appear in the editor; `resolveData`
+  // migrates them into `content` on load and `render` falls back to them.
+  heading?: string;
+  subheading?: string;
+  ctaText?: string;
+  ctaLink?: string;
   videoUrl: string;
   posterUrl: string;
   playback: "loop" | "playOnce" | "loopMuted";
@@ -87,10 +95,13 @@ function getVimeoEmbed(url: string, autoplay: boolean, loop: boolean, muted: boo
 
 export const HeroVideoConfig: ComponentConfig<HeroVideoProps> = {
   fields: {
-    heading: { type: "text" },
-    subheading: { type: "textarea" },
-    ctaText: { type: "text" },
-    ctaLink: { type: "text" },
+    content: {
+      ...wysiwygField({
+        minHeight: "220px",
+        placeholder: "Add your heading, subheading, call to action…",
+      }),
+      label: "Content",
+    },
     videoUrl: { type: "text" },
     posterUrl: { type: "text" },
     playback: {
@@ -135,10 +146,8 @@ export const HeroVideoConfig: ComponentConfig<HeroVideoProps> = {
     },
   },
   defaultProps: {
-    heading: "Welcome Home",
-    subheading: "Find your place in the neighborhood you love.",
-    ctaText: "Get Started",
-    ctaLink: "/contact",
+    content:
+      '<h1>Welcome Home</h1><p>Find your place in the neighborhood you love.</p><p><a href="/contact">Get Started</a></p>',
     videoUrl: "",
     posterUrl: "",
     playback: "loopMuted",
@@ -146,7 +155,18 @@ export const HeroVideoConfig: ComponentConfig<HeroVideoProps> = {
     contentAlignment: "center-center",
     minHeight: "md",
   },
+  // Migrate legacy heading/subheading/CTA copy into the WYSIWYG `content` the
+  // first time a block is loaded in the editor, so existing HeroVideo blocks
+  // open with their text already in the editor rather than blank.
+  resolveData: (data) => {
+    const props = data.props;
+    if (props.content?.trim()) return data;
+    const migrated = heroVideoLegacyHtml(props);
+    if (!migrated) return data;
+    return { ...data, props: { ...props, content: migrated } };
+  },
   render: ({
+    content,
     heading,
     subheading,
     ctaText,
@@ -163,6 +183,12 @@ export const HeroVideoConfig: ComponentConfig<HeroVideoProps> = {
       overlay === "dark" ? "bg-black/50" : overlay === "light" ? "bg-white/40" : "";
     const isLightOverlay = overlay === "light";
     const isEditing = puck?.isEditing;
+    // Prefer the WYSIWYG content; fall back to legacy fields for blocks that
+    // predate the editor and were never re-saved (public render skips
+    // resolveData). Sanitised as a render-time backstop.
+    const safeContent = stripDangerousTags(
+      heroVideoContentHtml({ content, heading, subheading, ctaText, ctaLink }),
+    );
     const kind = getEmbedKind(videoUrl);
     const loop = playback === "loop" || playback === "loopMuted";
     const muted = playback === "loopMuted";
@@ -225,26 +251,26 @@ export const HeroVideoConfig: ComponentConfig<HeroVideoProps> = {
         )}
 
         <div
-          className={`relative z-10 flex max-w-3xl flex-col gap-4 ${isLightOverlay ? "text-foreground" : "text-white"}`}
-        >
-          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl md:text-6xl">{heading}</h1>
-          {subheading && (
-            <p className={`text-base sm:text-lg md:text-xl ${isLightOverlay ? "text-foreground/80" : "text-white/90"}`}>
-              {subheading}
-            </p>
-          )}
-          {ctaText && (
-            <div>
-              <a
-                href={ctaLink}
-                className="inline-flex h-11 items-center rounded-lg bg-brand-accent px-6 font-semibold text-black transition-opacity hover:opacity-90 sm:h-12 sm:px-8"
-                style={{ backgroundColor: "var(--brand-accent)" }}
-              >
-                {ctaText}
-              </a>
-            </div>
-          )}
-        </div>
+          className={`hero-video-content relative z-10 max-w-3xl ${isLightOverlay ? "text-foreground" : "text-white"}`}
+          // Sanitised HTML from the WYSIWYG field. `content` is cleaned on
+          // every edit; `stripDangerousTags` is a render-time backstop for
+          // hand-edited JSON or migrated legacy copy. See sanitize-html.ts.
+          dangerouslySetInnerHTML={{ __html: safeContent }}
+        />
+
+        {/* Typographic defaults for the rendered HTML. Scoped to
+            `.hero-video-content` so it doesn't leak into other blocks. */}
+        <style>{`
+          .hero-video-content :first-child { margin-top: 0; }
+          .hero-video-content :last-child  { margin-bottom: 0; }
+          .hero-video-content h1 { font-size: clamp(1.875rem, 5vw, 3.75rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 1rem; }
+          .hero-video-content h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 0.75rem; }
+          .hero-video-content h3 { font-size: clamp(1.25rem, 3vw, 1.875rem); font-weight: 600; line-height: 1.2; margin: 0 0 0.5rem; }
+          .hero-video-content h4 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem; }
+          .hero-video-content p  { font-size: clamp(1rem, 1.5vw, 1.25rem); line-height: 1.5; margin: 0 0 1rem; }
+          .hero-video-content a  { text-decoration: underline; }
+          .hero-video-content blockquote { border-left: 3px solid currentColor; padding-left: 1rem; opacity: 0.85; margin: 0.5rem 0; }
+        `}</style>
       </section>
     );
   },

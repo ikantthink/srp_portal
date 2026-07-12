@@ -99,13 +99,19 @@ export function PuckEditor({
   const [puckKey, setPuckKey] = useState(0);
   const [puckData, setPuckData] = useState<Data>(() => sanitiseData(initialData));
 
-  // If the upstream `initialData` reference changes (e.g. parent reloaded the
-  // page), reseed our internal state.
+  // If the upstream `initialData` actually changes content (e.g. parent
+  // reloaded the page), reseed our internal state. Every server action call
+  // (including our own autosave) makes Next.js refetch this route's server
+  // component and hand us a new-but-equal `initialData` object; comparing by
+  // reference alone would remount Puck and drop the user's selection after
+  // every autosave, so compare content instead.
+  const lastInitialDataJsonRef = useRef<string>(JSON.stringify(initialData));
   useEffect(() => {
+    const json = JSON.stringify(initialData);
+    if (json === lastInitialDataJsonRef.current) return;
+    lastInitialDataJsonRef.current = json;
     setPuckData(sanitiseData(initialData));
     setPuckKey((k) => k + 1);
-    // We intentionally depend on the raw ref so callers can pass a fresh
-    // object to force a refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData]);
 

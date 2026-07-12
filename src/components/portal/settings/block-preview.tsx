@@ -53,30 +53,6 @@ export function BlockPreview({ type, props = {}, className }: BlockPreviewProps)
     root: { props: {} },
   };
 
-  // #region agent log
-  fetch("http://127.0.0.1:7382/ingest/7add8312-e272-4f75-96d1-733988ab72fa", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "146f8b",
-    },
-    body: JSON.stringify({
-      sessionId: "146f8b",
-      runId: "pre-fix",
-      hypothesisId: "A",
-      location: "block-preview.tsx:previewData",
-      message: "slot prop types in preview data",
-      data: {
-        baseType,
-        columnsIsArray: Array.isArray(mergedProps.columns),
-        contentIsArray: Array.isArray(mergedProps.content),
-        renderPath: "Render",
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   return (
     <div
       className={

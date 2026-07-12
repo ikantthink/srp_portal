@@ -35,11 +35,11 @@ ON CONFLICT (key) DO NOTHING;
 -- Keep the table but constrain it to provider-config services that genuinely
 -- belong in the database.
 DELETE FROM public.api_configurations
-  WHERE service NOT IN ('idx_broker', 'reso');
+  WHERE service NOT IN ('idx_broker', 'reso', 'google_reviews');
 
 ALTER TABLE public.api_configurations
   DROP CONSTRAINT IF EXISTS api_configurations_service_check;
 
 ALTER TABLE public.api_configurations
   ADD CONSTRAINT api_configurations_service_check
-  CHECK (service IN ('idx_broker', 'reso'));
+  CHECK (service IN ('idx_broker', 'reso', 'google_reviews'));

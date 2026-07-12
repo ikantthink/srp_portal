@@ -598,6 +598,7 @@ function WidgetConfigFields({
                 { value: "Pinterest", label: "Pinterest" },
                 { value: "Snapchat", label: "Snapchat" },
                 { value: "WhatsApp", label: "WhatsApp" },
+                { value: "Zillow", label: "Zillow" },
                 { value: "Other", label: "Other" },
               ]}
             />

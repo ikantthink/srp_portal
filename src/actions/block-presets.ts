@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 
 export interface BlockPreset {
@@ -31,6 +32,9 @@ export async function createBlockPreset(input: {
   folder: string;
   props: Record<string, unknown>;
 }) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -68,6 +72,9 @@ export async function updateBlockPreset(
     props?: Record<string, unknown>;
   }
 ) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -82,6 +89,9 @@ export async function updateBlockPreset(
 }
 
 export async function deleteBlockPreset(id: string) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase

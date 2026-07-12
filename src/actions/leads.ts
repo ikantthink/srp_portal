@@ -1,10 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createLead(formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: lead, error } = await supabase
@@ -32,6 +36,9 @@ export async function createLead(formData: FormData) {
 }
 
 export async function updateLead(id: string, formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -58,6 +65,9 @@ export async function updateLead(id: string, formData: FormData) {
 }
 
 export async function addLeadActivity(leadId: string, formData: FormData) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase
@@ -80,6 +90,9 @@ export async function addLeadActivity(leadId: string, formData: FormData) {
 }
 
 export async function updateLeadStatus(id: string, status: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase

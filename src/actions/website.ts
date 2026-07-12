@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { listNavVariants } from "@/lib/site-chrome";
@@ -82,6 +83,9 @@ function sanitiseSlug(value: string): string {
  * the row's id either way.
  */
 export async function ensureHomePage(): Promise<{ id: string } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: existing } = await supabase
@@ -124,6 +128,9 @@ export async function ensureHomePage(): Promise<{ id: string } | { error: string
  * migration. Returns the row's id either way.
  */
 export async function ensureListingsPage(): Promise<{ id: string } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: existing } = await supabase
@@ -161,6 +168,9 @@ export async function ensureListingsPage(): Promise<{ id: string } | { error: st
 }
 
 export async function createPage(formData: FormData) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const cleanSlug = sanitiseSlug(formData.get("slug") as string);
@@ -191,6 +201,9 @@ export async function savePageData(
   id: string,
   puckData: Record<string, unknown>
 ): Promise<{ ok: true } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -205,6 +218,9 @@ export async function savePageData(
 }
 
 export async function publishPage(id: string): Promise<{ ok: true } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: row, error: readErr } = await supabase
@@ -236,6 +252,9 @@ export async function publishPage(id: string): Promise<{ ok: true } | { error: s
 }
 
 export async function unpublishPage(id: string): Promise<{ ok: true } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: row } = await supabase
@@ -266,6 +285,9 @@ export async function unpublishPage(id: string): Promise<{ ok: true } | { error:
 }
 
 export async function discardDraft(id: string): Promise<{ ok: true } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: row, error: readErr } = await supabase
@@ -298,6 +320,9 @@ export async function updatePageMeta(
     nav_variant_id?: string | null;
   }
 ): Promise<{ ok: true } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const trimmedTitle = meta.title.trim();
@@ -372,6 +397,9 @@ export async function updatePageMeta(
 }
 
 export async function duplicatePage(id: string): Promise<{ id: string } | { error: string }> {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: source, error: readErr } = await supabase
@@ -422,6 +450,9 @@ export async function duplicatePage(id: string): Promise<{ id: string } | { erro
 }
 
 export async function deletePage(id: string) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: row } = await supabase

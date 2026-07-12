@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { revalidatePath } from "next/cache";
 import type { Workflow, WorkflowStage } from "@/types/database";
 
@@ -40,6 +41,9 @@ export async function createWorkflowStage(
   color: string,
   position: number
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("workflow_stages")
@@ -55,6 +59,9 @@ export async function updateWorkflowStage(
   id: string,
   updates: { name?: string; color?: string; position?: number }
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("workflow_stages")
@@ -66,6 +73,9 @@ export async function updateWorkflowStage(
 }
 
 export async function deleteWorkflowStage(id: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("workflow_stages")
@@ -80,6 +90,9 @@ export async function reorderWorkflowStages(
   workflowId: string,
   stageIds: string[]
 ) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   for (let i = 0; i < stageIds.length; i++) {
     const { error } = await supabase
@@ -94,6 +107,9 @@ export async function reorderWorkflowStages(
 }
 
 export async function updateLeadWorkflowStage(leadId: string, stageId: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("leads")

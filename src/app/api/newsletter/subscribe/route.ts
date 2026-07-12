@@ -1,14 +1,27 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const subscribeSchema = z.object({
+  email: z.string().email(),
+  name: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
-    const { email, name } = await request.json();
+    const ip = clientIp(request);
+    if (!rateLimit(`newsletter-subscribe:${ip}`, 5, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    const body = await request.json();
+    const parsed = subscribeSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
+    const { email, name } = parsed.data;
     const supabase = createAdminClient();
 
     const { error } = await supabase

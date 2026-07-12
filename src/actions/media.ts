@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/require-auth";
 import { MEDIA_BUCKET } from "@/lib/media/constants";
 import type { MediaFile, MediaFolder, MediaTag } from "@/types/database";
 
@@ -56,6 +57,9 @@ export async function listFolders(): Promise<MediaFolder[]> {
 }
 
 export async function createFolder(name: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const trimmed = name.trim();
   if (!trimmed) return { error: "Folder name is required" };
 
@@ -81,6 +85,9 @@ export async function createFolder(name: string) {
 }
 
 export async function renameFolder(id: string, name: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const trimmed = name.trim();
   if (!trimmed) return { error: "Folder name is required" };
 
@@ -106,6 +113,9 @@ export async function renameFolder(id: string, name: string) {
 }
 
 export async function deleteFolder(id: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: existing } = await supabase
@@ -213,12 +223,18 @@ export interface FinalizeUploadInput {
 }
 
 export async function finalizeUpload(input: FinalizeUploadInput) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  const { error: storageErr } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .createSignedUrl(input.storagePath, 60);
+
+  if (storageErr) {
+    return { error: "Uploaded file not found in storage" };
+  }
 
   const { data, error } = await supabase
     .from("media_files")
@@ -231,7 +247,7 @@ export async function finalizeUpload(input: FinalizeUploadInput) {
       size_bytes: input.sizeBytes,
       width: input.width ?? null,
       height: input.height ?? null,
-      uploaded_by: user.id,
+      uploaded_by: auth.userId,
     })
     .select()
     .single();
@@ -260,6 +276,9 @@ function safeStorageBase(input: string): string {
 }
 
 export async function renameFile(id: string, displayName: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const trimmed = displayName.trim();
   if (!trimmed) return { error: "Name is required" };
@@ -318,6 +337,9 @@ export async function renameFile(id: string, displayName: string) {
 
 export async function deleteFiles(ids: string[]) {
   if (ids.length === 0) return { success: true };
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { data: files } = await supabase
@@ -353,6 +375,9 @@ export async function deleteFiles(ids: string[]) {
 
 export async function moveFiles(ids: string[], folderId: string) {
   if (ids.length === 0) return { success: true };
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -384,6 +409,9 @@ export async function listTags(): Promise<MediaTag[]> {
  * link it to a file without a second round-trip.
  */
 export async function findOrCreateTag(name: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const trimmed = name.trim();
   if (!trimmed) return { error: "Tag name is required" };
 
@@ -418,6 +446,9 @@ export async function findOrCreateTag(name: string) {
 }
 
 export async function deleteTag(id: string) {
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
   const { error } = await supabase.from("media_tags").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -427,6 +458,9 @@ export async function deleteTag(id: string) {
 
 export async function applyTagToFiles(tagId: string, fileIds: string[]) {
   if (fileIds.length === 0) return { success: true };
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const rows = fileIds.map((file_id) => ({ file_id, tag_id: tagId }));
@@ -443,6 +477,9 @@ export async function applyTagToFiles(tagId: string, fileIds: string[]) {
 
 export async function removeTagFromFiles(tagId: string, fileIds: string[]) {
   if (fileIds.length === 0) return { success: true };
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -458,6 +495,9 @@ export async function removeTagFromFiles(tagId: string, fileIds: string[]) {
 
 export async function clearTagsFromFiles(fileIds: string[]) {
   if (fileIds.length === 0) return { success: true };
+  const auth = await requireUser();
+  if ("error" in auth) return { error: auth.error };
+
   const supabase = await createClient();
 
   const { error } = await supabase

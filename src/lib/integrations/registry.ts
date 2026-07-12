@@ -4,7 +4,8 @@ export type IntegrationKey =
   | "resend_email"
   | "listings_api"
   | "ai"
-  | "youtube";
+  | "youtube"
+  | "google_reviews";
 
 export interface IntegrationDef {
   key: IntegrationKey;
@@ -63,6 +64,15 @@ export const INTEGRATIONS: IntegrationDef[] = [
     description:
       "Powers the YouTube Feed block. Optional: without an API key the block falls back to public RSS (channel mode, ~15 latest videos, date-sorted only). To find your channel ID open YouTube → your channel → URL ends in /channel/UC… — that suffix is the ID.",
     envVars: ["YOUTUBE_API_KEY"],
+    defaultEnabled: false,
+  },
+  {
+    key: "google_reviews",
+    label: "Google Reviews",
+    description:
+      "Powers the Testimonials block when set to Google or Merge mode. Configure API credentials and your business location in Google Reviews settings.",
+    envVars: [],
+    configHref: "/portal/super-admin/google-reviews",
     defaultEnabled: false,
   },
 ];

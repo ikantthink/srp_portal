@@ -2,8 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { isIntegrationEnabled } from "@/lib/integrations/status";
+
+function siteUrl(): string | null {
+  return process.env.NEXT_PUBLIC_SITE_URL || null;
+}
 
 export async function signInWithPassword(formData: FormData) {
   const supabase = await createClient();
@@ -20,10 +23,11 @@ export async function signInWithPassword(formData: FormData) {
 }
 
 export async function signInWithMagicLink(formData: FormData) {
+  const origin = siteUrl();
+  if (!origin) return { error: "Site URL not configured" };
+
   const supabase = await createClient();
   const email = formData.get("email") as string;
-  const headersList = await headers();
-  const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -42,9 +46,10 @@ export async function signInWithGoogle() {
     return { error: "Google sign-in is currently disabled." };
   }
 
+  const origin = siteUrl();
+  if (!origin) return { error: "Site URL not configured" };
+
   const supabase = await createClient();
-  const headersList = await headers();
-  const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -58,30 +63,6 @@ export async function signInWithGoogle() {
   if (data.url) {
     redirect(data.url);
   }
-}
-
-export async function signUp(formData: FormData) {
-  const supabase = await createClient();
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const fullName = formData.get("full_name") as string;
-  const headersList = await headers();
-  const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-      data: { full_name: fullName },
-    },
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { success: "Check your email to confirm your account." };
 }
 
 export async function signOut() {
