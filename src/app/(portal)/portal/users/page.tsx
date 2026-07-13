@@ -14,14 +14,19 @@ export default async function UsersPage() {
 
   const supabase = await createClient();
 
-  const [{ data: profiles }, { data: invites }] = await Promise.all([
-    supabase.from("profiles").select("*, user_roles(role)").order("created_at", { ascending: false }),
+  const [{ data: profiles }, { data: roles }, { data: invites }] = await Promise.all([
+    supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    supabase.from("user_roles").select("user_id, role"),
     supabase
       .from("invites")
       .select("*")
       .eq("status", "pending")
       .order("created_at", { ascending: false }),
   ]);
+
+  // profiles and user_roles both reference auth.users independently (no direct FK
+  // between them), so PostgREST can't embed one under the other — merge in JS instead.
+  const roleByUserId = new Map((roles || []).map((r) => [r.user_id, r.role]));
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -56,7 +61,7 @@ export default async function UsersPage() {
         <CardContent>
           <div className="space-y-3">
             {profiles?.map((profile) => {
-              const role = (profile as any).user_roles?.[0]?.role || "user";
+              const role = roleByUserId.get(profile.user_id) || "user";
               return (
                 <div
                   key={profile.id}
