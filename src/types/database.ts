@@ -102,6 +102,20 @@ export interface UserRole {
   created_at: string;
 }
 
+export type InviteStatus = "pending" | "accepted" | "revoked";
+
+export interface Invite {
+  id: string;
+  email: string;
+  role: Role;
+  invited_by: string | null;
+  token: string;
+  status: InviteStatus;
+  expires_at: string;
+  created_at: string;
+  accepted_at: string | null;
+}
+
 export interface Transaction {
   id: string;
   property_address: string;

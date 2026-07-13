@@ -20,6 +20,7 @@ import {
   Shield,
   Building2,
   Image as ImageIcon,
+  UserCog,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { label: "URL Shortener", href: "/portal/url-shortener", icon: Link2 },
   { label: "Forms", href: "/portal/forms", icon: FileText },
   { label: "Newsletters", href: "/portal/newsletters", icon: Newspaper, roles: ["admin", "super_admin"] },
+  { label: "Users", href: "/portal/users", icon: UserCog, roles: ["admin", "super_admin"] },
   { label: "Settings", href: "/portal/settings", icon: Settings },
   { label: "Super Admin", href: "/portal/super-admin", icon: Shield, roles: ["super_admin"] },
 ];

@@ -13,6 +13,11 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    const errorCode = error.message.includes("invite_required")
+      ? "invite_required"
+      : "auth_callback_error";
+    return NextResponse.redirect(`${origin}/login?error=${errorCode}`);
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);

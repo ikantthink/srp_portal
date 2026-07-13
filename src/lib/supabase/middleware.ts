@@ -59,7 +59,7 @@ export async function updateSession(request: NextRequest) {
 
     const role = roleData?.role || "user";
 
-    const adminOnlyPaths = ["/portal/website", "/portal/newsletters"];
+    const adminOnlyPaths = ["/portal/website", "/portal/newsletters", "/portal/users"];
     const superAdminPaths = ["/portal/super-admin"];
 
     if (
