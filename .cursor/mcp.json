@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "supabase": {
-      "url": "https://mcp.supabase.com/mcp?project_ref=xhcturbufbjcporiahcn&read_only=true"
+    "srp_supabase": {
+      "url": "https://mcp.supabase.com/mcp?project_ref=xhcturbufbjcporiahcn"
     }
   }
 }
