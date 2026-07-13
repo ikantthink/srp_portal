@@ -11,6 +11,7 @@ import type { Invite } from "@/types/database";
 export function PendingInvitesList({ invites }: { invites: Invite[] }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
   if (invites.length === 0) {
     return <p className="text-sm text-muted-foreground">No pending invites.</p>;
@@ -18,21 +19,37 @@ export function PendingInvitesList({ invites }: { invites: Invite[] }) {
 
   async function handleResend(id: string) {
     setLoadingId(id);
-    await resendInvite(id);
+    setMessage(null);
+    const result = await resendInvite(id);
     setLoadingId(null);
-    router.refresh();
+    if (result?.error) {
+      setMessage({ type: "error", text: result.error });
+    } else if (result?.success) {
+      setMessage({ type: "success", text: result.success });
+      router.refresh();
+    }
   }
 
   async function handleRevoke(id: string) {
     if (!confirm("Revoke this invite?")) return;
     setLoadingId(id);
-    await revokeInvite(id);
+    setMessage(null);
+    const result = await revokeInvite(id);
     setLoadingId(null);
-    router.refresh();
+    if (result?.error) {
+      setMessage({ type: "error", text: result.error });
+    } else {
+      router.refresh();
+    }
   }
 
   return (
     <div className="space-y-3">
+      {message && (
+        <p className={`text-sm ${message.type === "error" ? "text-red-600" : "text-emerald-600"}`}>
+          {message.text}
+        </p>
+      )}
       {invites.map((invite) => {
         const expired = new Date(invite.expires_at) < new Date();
         return (

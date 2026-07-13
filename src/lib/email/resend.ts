@@ -32,7 +32,7 @@ export async function sendEmail({
 
   const resend = getResend();
   const { data, error } = await resend.emails.send({
-    from: from || "SRP Real Estate <noreply@srpre.com>",
+    from: from || process.env.RESEND_FROM_EMAIL || "SRP Real Estate <noreply@srprealtygroup.com>",
     to: Array.isArray(to) ? to : [to],
     subject,
     html,
