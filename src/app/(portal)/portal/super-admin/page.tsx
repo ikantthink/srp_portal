@@ -4,7 +4,6 @@ import {
   Globe,
   PlugZap,
   Building,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,18 +56,6 @@ const groups: Group[] = [
         description: "Places or Business Profile API credentials",
         href: "/portal/super-admin/google-reviews",
         icon: Building,
-      },
-    ],
-  },
-  {
-    title: "Access",
-    description: "Who can sign in and what they can do.",
-    sections: [
-      {
-        title: "Users & Roles",
-        description: "Manage team members and assign roles",
-        href: "/portal/super-admin/users",
-        icon: Users,
       },
     ],
   },
