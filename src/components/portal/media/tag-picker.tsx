@@ -15,6 +15,7 @@ interface TagPickerProps {
   triggerIcon?: React.ReactNode;
   allowCreate?: boolean;
   placement?: "bottom" | "right";
+  disabled?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export function TagPicker({
   triggerIcon,
   allowCreate = true,
   placement = "bottom",
+  disabled = false,
 }: TagPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -67,8 +69,9 @@ export function TagPicker({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        disabled={disabled}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted/50",
+          "inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted/50 disabled:opacity-50 disabled:pointer-events-none",
           open && "bg-muted/50"
         )}
       >

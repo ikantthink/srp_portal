@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { addLeadActivity } from "@/actions/leads";
 import type { LeadActivity } from "@/types/database";
@@ -37,7 +38,7 @@ export function ActivityLog({
           </select>
           <Input name="description" placeholder="Description..." required />
           <div className="flex gap-2">
-            <Button type="submit" size="sm">Add</Button>
+            <SubmitButton size="sm">Add</SubmitButton>
             <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
               Cancel
             </Button>

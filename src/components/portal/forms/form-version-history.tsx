@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { loadVersionIntoDraft } from "@/actions/forms";
@@ -17,8 +18,12 @@ export function FormVersionHistory({
   currentVersionId,
   versions,
 }: FormVersionHistoryProps) {
-  async function handleLoadVersion(versionId: string) {
-    await loadVersionIntoDraft(formId, versionId);
+  const [isPending, startTransition] = useTransition();
+
+  function handleLoadVersion(versionId: string) {
+    startTransition(async () => {
+      await loadVersionIntoDraft(formId, versionId);
+    });
   }
 
   return (
@@ -49,6 +54,7 @@ export function FormVersionHistory({
             <Button
               variant="outline"
               size="sm"
+              disabled={isPending}
               onClick={() => handleLoadVersion(version.id)}
             >
               <RotateCcw className="mr-1 h-3.5 w-3.5" />

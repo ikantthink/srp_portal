@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface NotificationSettingsProps {
@@ -35,23 +35,27 @@ export function NotificationSettings({
     }
   );
 
-  async function toggle(eventType: string, channel: "email" | "sms") {
-    const newValue = !settings[eventType]?.[channel];
-    setSettings((prev) => ({
-      ...prev,
-      [eventType]: { ...prev[eventType], [channel]: newValue },
-    }));
+  const [isPending, startTransition] = useTransition();
 
-    const supabase = createClient();
-    await supabase.from("notification_settings").upsert(
-      {
-        user_id: userId,
-        event_type: eventType,
-        channel,
-        enabled: newValue,
-      },
-      { onConflict: "user_id,channel,event_type" }
-    );
+  function toggle(eventType: string, channel: "email" | "sms") {
+    const newValue = !settings[eventType]?.[channel];
+    startTransition(async () => {
+      setSettings((prev) => ({
+        ...prev,
+        [eventType]: { ...prev[eventType], [channel]: newValue },
+      }));
+
+      const supabase = createClient();
+      await supabase.from("notification_settings").upsert(
+        {
+          user_id: userId,
+          event_type: eventType,
+          channel,
+          enabled: newValue,
+        },
+        { onConflict: "user_id,channel,event_type" }
+      );
+    });
   }
 
   const gridCols = smsEnabled ? "grid-cols-3" : "grid-cols-2";
@@ -74,7 +78,8 @@ export function NotificationSettings({
           <div className="text-center">
             <button
               onClick={() => toggle(et.key, "email")}
-              className={`h-6 w-11 rounded-full transition-colors ${
+              disabled={isPending}
+              className={`h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${
                 settings[et.key]?.email ? "bg-brand-primary" : "bg-border"
               }`}
             >
@@ -89,7 +94,8 @@ export function NotificationSettings({
             <div className="text-center">
               <button
                 onClick={() => toggle(et.key, "sms")}
-                className={`h-6 w-11 rounded-full transition-colors ${
+                disabled={isPending}
+                className={`h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${
                   settings[et.key]?.sms ? "bg-brand-primary" : "bg-border"
                 }`}
               >

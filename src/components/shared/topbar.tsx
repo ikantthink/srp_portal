@@ -2,6 +2,7 @@
 
 import { signOut } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { LogOut, Menu, User } from "lucide-react";
 
 interface TopbarProps {
@@ -36,9 +37,9 @@ export function Topbar({ userName, userRole, onOpenMobile }: TopbarProps) {
           </div>
         </div>
         <form action={signOut}>
-          <Button variant="ghost" size="icon" type="submit" title="Sign out">
+          <SubmitButton variant="ghost" size="icon" title="Sign out">
             <LogOut className="h-4 w-4" />
-          </Button>
+          </SubmitButton>
         </form>
       </div>
     </header>

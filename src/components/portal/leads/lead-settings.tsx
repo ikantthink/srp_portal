@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,33 +59,40 @@ function TagManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [isPending, startTransition] = useTransition();
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!name.trim()) return;
-    const result = await createLeadTag(name.trim(), color);
-    if (result.data) {
-      onTagsChange([...tags, result.data as LeadTag]);
-      setName("");
-      setColor(PRESET_COLORS[0]);
-      setCreating(false);
-    }
+    startTransition(async () => {
+      const result = await createLeadTag(name.trim(), color);
+      if (result.data) {
+        onTagsChange([...tags, result.data as LeadTag]);
+        setName("");
+        setColor(PRESET_COLORS[0]);
+        setCreating(false);
+      }
+    });
   }
 
-  async function handleUpdate(id: string) {
+  function handleUpdate(id: string) {
     if (!name.trim()) return;
-    const result = await updateLeadTag(id, name.trim(), color);
-    if (!result.error) {
-      onTagsChange(tags.map((t) => (t.id === id ? { ...t, name: name.trim(), color } : t)));
-      setEditingId(null);
-      setName("");
-    }
+    startTransition(async () => {
+      const result = await updateLeadTag(id, name.trim(), color);
+      if (!result.error) {
+        onTagsChange(tags.map((t) => (t.id === id ? { ...t, name: name.trim(), color } : t)));
+        setEditingId(null);
+        setName("");
+      }
+    });
   }
 
-  async function handleDelete(id: string) {
-    const result = await deleteLeadTag(id);
-    if (!result.error) {
-      onTagsChange(tags.filter((t) => t.id !== id));
-    }
+  function handleDelete(id: string) {
+    startTransition(async () => {
+      const result = await deleteLeadTag(id);
+      if (!result.error) {
+        onTagsChange(tags.filter((t) => t.id !== id));
+      }
+    });
   }
 
   function startEdit(tag: LeadTag) {
@@ -118,7 +125,7 @@ function TagManager({
           </p>
         </div>
         {!creating && !editingId && (
-          <Button size="sm" onClick={startCreate}>
+          <Button size="sm" disabled={isPending} onClick={startCreate}>
             <Plus className="mr-1 h-3.5 w-3.5" /> New Tag
           </Button>
         )}
@@ -166,11 +173,12 @@ function TagManager({
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={cancel}>
+            <Button variant="outline" size="sm" onClick={cancel} disabled={isPending}>
               <X className="mr-1 h-3.5 w-3.5" /> Cancel
             </Button>
             <Button
               size="sm"
+              disabled={isPending}
               onClick={() => (editingId ? handleUpdate(editingId) : handleCreate())}
             >
               <Check className="mr-1 h-3.5 w-3.5" /> {editingId ? "Update" : "Create"}
@@ -202,6 +210,7 @@ function TagManager({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
+                disabled={isPending}
                 onClick={() => startEdit(tag)}
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -210,6 +219,7 @@ function TagManager({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                disabled={isPending}
                 onClick={() => handleDelete(tag.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -237,48 +247,57 @@ function WorkflowManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [isPending, startTransition] = useTransition();
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!name.trim()) return;
-    const position = stages.length;
-    const result = await createWorkflowStage(workflowId, name.trim(), color, position);
-    if (result.data) {
-      onStagesChange([...stages, result.data as WorkflowStage]);
-      setName("");
-      setColor(PRESET_COLORS[0]);
-      setCreating(false);
-    }
+    startTransition(async () => {
+      const position = stages.length;
+      const result = await createWorkflowStage(workflowId, name.trim(), color, position);
+      if (result.data) {
+        onStagesChange([...stages, result.data as WorkflowStage]);
+        setName("");
+        setColor(PRESET_COLORS[0]);
+        setCreating(false);
+      }
+    });
   }
 
-  async function handleUpdate(id: string) {
+  function handleUpdate(id: string) {
     if (!name.trim()) return;
-    const result = await updateWorkflowStage(id, { name: name.trim(), color });
-    if (!result.error) {
-      onStagesChange(
-        stages.map((s) => (s.id === id ? { ...s, name: name.trim(), color } : s))
-      );
-      setEditingId(null);
-      setName("");
-    }
+    startTransition(async () => {
+      const result = await updateWorkflowStage(id, { name: name.trim(), color });
+      if (!result.error) {
+        onStagesChange(
+          stages.map((s) => (s.id === id ? { ...s, name: name.trim(), color } : s))
+        );
+        setEditingId(null);
+        setName("");
+      }
+    });
   }
 
-  async function handleDelete(id: string) {
-    const result = await deleteWorkflowStage(id);
-    if (!result.error) {
-      const updated = stages.filter((s) => s.id !== id);
-      onStagesChange(updated);
-    }
+  function handleDelete(id: string) {
+    startTransition(async () => {
+      const result = await deleteWorkflowStage(id);
+      if (!result.error) {
+        const updated = stages.filter((s) => s.id !== id);
+        onStagesChange(updated);
+      }
+    });
   }
 
-  async function moveStage(index: number, direction: -1 | 1) {
+  function moveStage(index: number, direction: -1 | 1) {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= stages.length) return;
     const reordered = [...stages];
     const [moved] = reordered.splice(index, 1);
     reordered.splice(newIndex, 0, moved);
     const updated = reordered.map((s, i) => ({ ...s, position: i }));
-    onStagesChange(updated);
-    await reorderWorkflowStages(workflowId, updated.map((s) => s.id));
+    startTransition(async () => {
+      onStagesChange(updated);
+      await reorderWorkflowStages(workflowId, updated.map((s) => s.id));
+    });
   }
 
   function startEdit(stage: WorkflowStage) {
@@ -311,7 +330,7 @@ function WorkflowManager({
           </p>
         </div>
         {!creating && !editingId && (
-          <Button size="sm" onClick={startCreate}>
+          <Button size="sm" disabled={isPending} onClick={startCreate}>
             <Plus className="mr-1 h-3.5 w-3.5" /> New Stage
           </Button>
         )}
@@ -359,11 +378,12 @@ function WorkflowManager({
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={cancel}>
+            <Button variant="outline" size="sm" onClick={cancel} disabled={isPending}>
               <X className="mr-1 h-3.5 w-3.5" /> Cancel
             </Button>
             <Button
               size="sm"
+              disabled={isPending}
               onClick={() => (editingId ? handleUpdate(editingId) : handleCreate())}
             >
               <Check className="mr-1 h-3.5 w-3.5" /> {editingId ? "Update" : "Create"}
@@ -387,14 +407,14 @@ function WorkflowManager({
               <div className="flex flex-col gap-0.5">
                 <button
                   onClick={() => moveStage(index, -1)}
-                  disabled={index === 0}
+                  disabled={isPending || index === 0}
                   className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
                   <ChevronUp className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => moveStage(index, 1)}
-                  disabled={index === stages.length - 1}
+                  disabled={isPending || index === stages.length - 1}
                   className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
                   <ChevronDown className="h-3 w-3" />
@@ -412,6 +432,7 @@ function WorkflowManager({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
+                disabled={isPending}
                 onClick={() => startEdit(stage)}
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -420,6 +441,7 @@ function WorkflowManager({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                disabled={isPending}
                 onClick={() => handleDelete(stage.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />

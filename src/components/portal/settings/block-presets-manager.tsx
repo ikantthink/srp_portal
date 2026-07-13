@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
@@ -36,6 +36,7 @@ export function BlockPresetsManager({
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const folders = Array.from(new Set(presets.map((p) => p.folder))).sort();
 
@@ -57,12 +58,14 @@ export function BlockPresetsManager({
     {} as Record<string, BlockPreset[]>
   );
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     if (!confirm("Delete this preset?")) return;
-    const result = await deleteBlockPreset(id);
-    if (!result.error) {
-      setPresets((prev) => prev.filter((p) => p.id !== id));
-    }
+    startTransition(async () => {
+      const result = await deleteBlockPreset(id);
+      if (!result.error) {
+        setPresets((prev) => prev.filter((p) => p.id !== id));
+      }
+    });
   }
 
   const filterTerm = filter.trim().toLowerCase();
@@ -191,7 +194,8 @@ export function BlockPresetsManager({
                           </button>
                           <button
                             onClick={() => handleDelete(preset.id)}
-                            className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-muted"
+                            disabled={isPending}
+                            className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-muted disabled:opacity-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

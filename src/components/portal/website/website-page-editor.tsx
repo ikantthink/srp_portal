@@ -56,6 +56,7 @@ export function WebsitePageEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [status, setStatus] = useState(initialStatus);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState(false);
   // Slug is kept in state because the settings panel can change it and the
   // "Preview draft" button needs the current value.
   const [slug, setSlug] = useState(initialSlugProp);
@@ -162,23 +163,33 @@ export function WebsitePageEditor({
 
   async function handlePublishToLive() {
     setActionError(null);
-    if (dirty) await handleManualSave();
-    const result = await publishPage(pageId);
-    if ("error" in result) {
-      setActionError(result.error);
-      return;
+    setActionPending(true);
+    try {
+      if (dirty) await handleManualSave();
+      const result = await publishPage(pageId);
+      if ("error" in result) {
+        setActionError(result.error);
+        return;
+      }
+      setStatus("published");
+    } finally {
+      setActionPending(false);
     }
-    setStatus("published");
   }
 
   async function handleUnpublish() {
     setActionError(null);
-    const result = await unpublishPage(pageId);
-    if ("error" in result) {
-      setActionError(result.error);
-      return;
+    setActionPending(true);
+    try {
+      const result = await unpublishPage(pageId);
+      if ("error" in result) {
+        setActionError(result.error);
+        return;
+      }
+      setStatus("draft");
+    } finally {
+      setActionPending(false);
     }
-    setStatus("draft");
   }
 
   async function handleDiscardDraft() {
@@ -186,12 +197,15 @@ export function WebsitePageEditor({
     if (!window.confirm("Discard your draft changes and restore the last published version?")) {
       return;
     }
+    setActionPending(true);
     const result = await discardDraft(pageId);
     if ("error" in result) {
       setActionError(result.error);
+      setActionPending(false);
       return;
     }
-    // Reload so Puck remounts with the restored draft data.
+    // Reload so Puck remounts with the restored draft data; no need to clear
+    // actionPending since the page is about to navigate away.
     window.location.reload();
   }
 
@@ -221,26 +235,26 @@ export function WebsitePageEditor({
         <Button
           size="sm"
           onClick={handleManualSave}
-          disabled={saving || !dirty}
+          disabled={saving || actionPending || !dirty}
           aria-label="Save page draft"
         >
           {saving ? "Saving…" : dirty ? "Save" : "Saved"}
         </Button>
         {status === "draft" ? (
-          <Button size="sm" variant="outline" onClick={handlePublishToLive} disabled={saving}>
+          <Button size="sm" variant="outline" onClick={handlePublishToLive} disabled={saving || actionPending}>
             Publish to Live
           </Button>
         ) : (
           <>
-            <Button size="sm" variant="outline" onClick={handlePublishToLive} disabled={saving}>
+            <Button size="sm" variant="outline" onClick={handlePublishToLive} disabled={saving || actionPending}>
               Republish
             </Button>
-            <Button size="sm" variant="ghost" onClick={handleUnpublish} disabled={saving || slug === "home"}>
+            <Button size="sm" variant="ghost" onClick={handleUnpublish} disabled={saving || actionPending || slug === "home"}>
               Unpublish
             </Button>
           </>
         )}
-        <Button size="sm" variant="ghost" onClick={handleDiscardDraft} disabled={saving}>
+        <Button size="sm" variant="ghost" onClick={handleDiscardDraft} disabled={saving || actionPending}>
           Discard draft
         </Button>
         <Button size="sm" variant="ghost" onClick={handlePreviewDraft}>

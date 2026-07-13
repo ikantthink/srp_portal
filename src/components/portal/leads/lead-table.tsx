@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/data-table";
 import type { Lead, LeadTag, WorkflowStage } from "@/types/database";
@@ -150,6 +150,7 @@ function buildColumns(
 function TagCell({ lead, allTags }: { lead: Lead; allTags: LeadTag[] }) {
   const [open, setOpen] = useState(false);
   const [leadTags, setLeadTags] = useState<LeadTag[]>(lead.tags || []);
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -169,14 +170,16 @@ function TagCell({ lead, allTags }: { lead: Lead; allTags: LeadTag[] }) {
 
   const tagIds = new Set(leadTags.map((t) => t.id));
 
-  async function toggle(tag: LeadTag) {
-    if (tagIds.has(tag.id)) {
-      setLeadTags((prev) => prev.filter((t) => t.id !== tag.id));
-      await removeTagFromLead(lead.id, tag.id);
-    } else {
-      setLeadTags((prev) => [...prev, tag]);
-      await addTagToLead(lead.id, tag.id);
-    }
+  function toggle(tag: LeadTag) {
+    startTransition(async () => {
+      if (tagIds.has(tag.id)) {
+        setLeadTags((prev) => prev.filter((t) => t.id !== tag.id));
+        await removeTagFromLead(lead.id, tag.id);
+      } else {
+        setLeadTags((prev) => [...prev, tag]);
+        await addTagToLead(lead.id, tag.id);
+      }
+    });
   }
 
   return (
@@ -209,7 +212,8 @@ function TagCell({ lead, allTags }: { lead: Lead; allTags: LeadTag[] }) {
             <button
               key={tag.id}
               onClick={() => toggle(tag)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
+              disabled={isPending}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors disabled:opacity-50"
             >
               <span
                 className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -240,6 +244,7 @@ function StatusCell({
   const [currentStageId, setCurrentStageId] = useState(
     lead.workflow_stage_id
   );
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -259,10 +264,12 @@ function StatusCell({
 
   const currentStage = stages.find((s) => s.id === currentStageId);
 
-  async function selectStage(stage: WorkflowStage) {
-    setCurrentStageId(stage.id);
+  function selectStage(stage: WorkflowStage) {
     setOpen(false);
-    await updateLeadWorkflowStage(lead.id, stage.id);
+    startTransition(async () => {
+      setCurrentStageId(stage.id);
+      await updateLeadWorkflowStage(lead.id, stage.id);
+    });
   }
 
   if (stages.length === 0) {
@@ -277,7 +284,8 @@ function StatusCell({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity"
+        disabled={isPending}
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-50"
         style={{
           backgroundColor: currentStage?.color || "#6b7280",
         }}

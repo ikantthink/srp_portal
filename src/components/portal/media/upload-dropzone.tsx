@@ -43,6 +43,10 @@ export function UploadDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState<ProgressItem[]>([]);
+  // Synchronous lock so a second drop/click can't start an overlapping batch
+  // before the "uploading" state has re-rendered.
+  const busyRef = useRef(false);
+  const [uploading, setUploading] = useState(false);
 
   const uploadOne = useCallback(
     async (file: File): Promise<MediaFile | null> => {
@@ -96,47 +100,54 @@ export function UploadDropzone({
   const handleFiles = useCallback(
     async (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
-      if (files.length === 0) return;
+      if (files.length === 0 || busyRef.current) return;
+      busyRef.current = true;
+      setUploading(true);
 
-      setProgress(
-        files.map((f) => ({ name: f.name, status: "uploading" as const }))
-      );
+      try {
+        setProgress(
+          files.map((f) => ({ name: f.name, status: "uploading" as const }))
+        );
 
-      const uploaded: MediaFile[] = [];
-      let errorCount = 0;
+        const uploaded: MediaFile[] = [];
+        let errorCount = 0;
 
-      // Sequential uploads keep the UI deterministic and avoid hammering the
-      // storage API. For bulk uploads of many small files this still feels
-      // responsive because each finalize returns within a few hundred ms.
-      for (let i = 0; i < files.length; i++) {
-        try {
-          const result = await uploadOne(files[i]);
-          if (result) uploaded.push(result);
-          setProgress((prev) =>
-            prev.map((p, idx) => (idx === i ? { ...p, status: "done" } : p))
-          );
-        } catch (err) {
-          errorCount++;
-          setProgress((prev) =>
-            prev.map((p, idx) =>
-              idx === i
-                ? {
-                    ...p,
-                    status: "error",
-                    message: err instanceof Error ? err.message : "Upload failed",
-                  }
-                : p
-            )
-          );
+        // Sequential uploads keep the UI deterministic and avoid hammering the
+        // storage API. For bulk uploads of many small files this still feels
+        // responsive because each finalize returns within a few hundred ms.
+        for (let i = 0; i < files.length; i++) {
+          try {
+            const result = await uploadOne(files[i]);
+            if (result) uploaded.push(result);
+            setProgress((prev) =>
+              prev.map((p, idx) => (idx === i ? { ...p, status: "done" } : p))
+            );
+          } catch (err) {
+            errorCount++;
+            setProgress((prev) =>
+              prev.map((p, idx) =>
+                idx === i
+                  ? {
+                      ...p,
+                      status: "error",
+                      message: err instanceof Error ? err.message : "Upload failed",
+                    }
+                  : p
+              )
+            );
+          }
         }
-      }
 
-      if (uploaded.length > 0) onUploaded(uploaded);
+        if (uploaded.length > 0) onUploaded(uploaded);
 
-      // Auto-clear the strip on full success; leave it visible on errors so
-      // users can read the message.
-      if (errorCount === 0) {
-        setTimeout(() => setProgress([]), 1500);
+        // Auto-clear the strip on full success; leave it visible on errors so
+        // users can read the message.
+        if (errorCount === 0) {
+          setTimeout(() => setProgress([]), 1500);
+        }
+      } finally {
+        busyRef.current = false;
+        setUploading(false);
       }
     },
     [uploadOne, onUploaded]
@@ -156,11 +167,12 @@ export function UploadDropzone({
           setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={onDrop}
-        onClick={() => inputRef.current?.click()}
+        onDrop={uploading ? undefined : onDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed text-center transition-colors",
           compact ? "gap-1 px-4 py-4" : "gap-2 px-4 py-8",
+          uploading && "pointer-events-none opacity-60",
           dragOver
             ? "border-brand-primary bg-brand-primary/5"
             : "border-border hover:bg-muted/40"
@@ -183,6 +195,7 @@ export function UploadDropzone({
           multiple
           accept={ACCEPTED_MIME.join(",")}
           className="hidden"
+          disabled={uploading}
           onChange={(e) => {
             if (e.target.files) handleFiles(e.target.files);
             e.target.value = "";

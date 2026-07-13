@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { updateMilestone } from "@/actions/transactions";
 import type { TransactionMilestone } from "@/types/database";
@@ -66,9 +66,10 @@ function MilestoneItem({
   isLast: boolean;
 }) {
   const [status, setStatus] = useState(milestone.status);
+  const [isPending, startTransition] = useTransition();
   const Icon = statusIcons[status];
 
-  async function cycleStatus() {
+  function cycleStatus() {
     const next =
       status === "pending"
         ? "in_progress"
@@ -78,8 +79,10 @@ function MilestoneItem({
             ? "skipped"
             : "pending";
 
-    setStatus(next as typeof status);
-    await updateMilestone(milestone.id, { status: next });
+    startTransition(async () => {
+      setStatus(next as typeof status);
+      await updateMilestone(milestone.id, { status: next });
+    });
   }
 
   return (
@@ -87,8 +90,9 @@ function MilestoneItem({
       <div className="flex flex-col items-center">
         <button
           onClick={cycleStatus}
+          disabled={isPending}
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors disabled:opacity-50",
             statusColors[status]
           )}
           title={`Click to change status (current: ${status})`}

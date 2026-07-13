@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addParty } from "@/actions/transactions";
@@ -89,7 +90,7 @@ export function PartyList({
             <Input id="p-company" name="company" />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" size="sm">Add Party</Button>
+            <SubmitButton size="sm">Add Party</SubmitButton>
             <Button
               type="button"
               variant="outline"

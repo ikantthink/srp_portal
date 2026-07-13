@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Folder,
   FolderLock,
@@ -338,6 +338,7 @@ export function MediaLibrary({
               onCreated={(tag) => setTags((prev) => [...prev, tag])}
               triggerLabel="Apply tag"
               triggerIcon={<TagIconLucide className="h-3.5 w-3.5" />}
+              disabled={busy}
             />
 
             <Button
@@ -433,25 +434,34 @@ function FolderRow({
   active: boolean;
   onSelect: () => void;
   onRename: (name: string) => Promise<boolean>;
-  onDelete: () => void;
+  onDelete: () => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(folder.name);
+  const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
 
-  async function commit() {
+  function commit() {
     if (name.trim() === "" || name.trim() === folder.name) {
       setEditing(false);
       setName(folder.name);
       return;
     }
-    const ok = await onRename(name.trim());
-    if (ok) setEditing(false);
-    else setName(folder.name);
+    startTransition(async () => {
+      const ok = await onRename(name.trim());
+      if (ok) setEditing(false);
+      else setName(folder.name);
+    });
+  }
+
+  function handleDeleteClick() {
+    startTransition(async () => {
+      await onDelete();
+    });
   }
 
   return (
@@ -473,6 +483,7 @@ function FolderRow({
         <Input
           ref={inputRef}
           value={name}
+          disabled={isPending}
           onChange={(e) => setName(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => {
@@ -502,22 +513,24 @@ function FolderRow({
         <div className="flex opacity-0 group-hover:opacity-100">
           <button
             type="button"
+            disabled={isPending}
             onClick={(e) => {
               e.stopPropagation();
               setEditing(true);
             }}
-            className="rounded p-0.5 hover:bg-background"
+            className="rounded p-0.5 hover:bg-background disabled:opacity-50"
             title="Rename"
           >
             <Pencil className="h-3 w-3" />
           </button>
           <button
             type="button"
+            disabled={isPending}
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              handleDeleteClick();
             }}
-            className="rounded p-0.5 hover:bg-background"
+            className="rounded p-0.5 hover:bg-background disabled:opacity-50"
             title="Delete"
           >
             <Trash2 className="h-3 w-3" />
@@ -528,9 +541,10 @@ function FolderRow({
       {editing && (
         <button
           type="button"
+          disabled={isPending}
           onMouseDown={(e) => e.preventDefault()}
           onClick={commit}
-          className="rounded p-0.5 hover:bg-background"
+          className="rounded p-0.5 hover:bg-background disabled:opacity-50"
           title="Save"
         >
           <Check className="h-3 w-3" />
@@ -617,6 +631,7 @@ function FileDetailsDrawer({
   const [renaming, setRenaming] = useState(false);
   const [displayName, setDisplayName] = useState(fileDisplayName(file));
   const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const fileTagIds = new Set((file.tags ?? []).map((t) => t.id));
   const folder = folders.find((f) => f.id === file.folder_id);
@@ -628,29 +643,33 @@ function FileDetailsDrawer({
     setTimeout(() => setCopied(false), 1500);
   }
 
-  async function commitRename() {
+  function commitRename() {
     const trimmed = displayName.trim();
     if (!trimmed || trimmed === fileDisplayName(file)) {
       setRenaming(false);
       setDisplayName(fileDisplayName(file));
       return;
     }
-    const result = await renameFile(file.id, trimmed);
-    if ("error" in result) {
-      alert(result.error);
-      return;
-    }
-    setRenaming(false);
-    onChanged();
+    startTransition(async () => {
+      const result = await renameFile(file.id, trimmed);
+      if ("error" in result) {
+        alert(result.error);
+        return;
+      }
+      setRenaming(false);
+      onChanged();
+    });
   }
 
-  async function toggleTag(tag: MediaTag) {
-    if (fileTagIds.has(tag.id)) {
-      await removeTagFromFiles(tag.id, [file.id]);
-    } else {
-      await applyTagToFiles(tag.id, [file.id]);
-    }
-    onChanged();
+  function toggleTag(tag: MediaTag) {
+    startTransition(async () => {
+      if (fileTagIds.has(tag.id)) {
+        await removeTagFromFiles(tag.id, [file.id]);
+      } else {
+        await applyTagToFiles(tag.id, [file.id]);
+      }
+      onChanged();
+    });
   }
 
   return (
@@ -701,6 +720,7 @@ function FileDetailsDrawer({
               <div className="flex gap-1">
                 <Input
                   value={displayName}
+                  disabled={isPending}
                   onChange={(e) => setDisplayName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") commitRename();
@@ -712,7 +732,7 @@ function FileDetailsDrawer({
                   className="h-9"
                   autoFocus
                 />
-                <Button size="sm" onClick={commitRename}>Save</Button>
+                <Button size="sm" disabled={isPending} onClick={commitRename}>Save</Button>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
@@ -722,6 +742,7 @@ function FileDetailsDrawer({
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={isPending}
                   onClick={() => setRenaming(true)}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -795,6 +816,7 @@ function FileDetailsDrawer({
               onToggle={toggleTag}
               onCreated={onTagCreated}
               triggerLabel="Edit tags"
+              disabled={isPending}
             />
           </div>
         </div>

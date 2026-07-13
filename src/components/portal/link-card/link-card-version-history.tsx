@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { rollbackLinkCardVersion } from "@/actions/link-cards";
@@ -15,6 +16,14 @@ export function LinkCardVersionHistory({
   currentVersionId: string | null;
   versions: LinkCardVersion[];
 }) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleRollback(versionId: string) {
+    startTransition(async () => {
+      await rollbackLinkCardVersion(linkCardId, versionId);
+    });
+  }
+
   return (
     <div className="space-y-3">
       {versions.map((version) => (
@@ -40,7 +49,8 @@ export function LinkCardVersionHistory({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => rollbackLinkCardVersion(linkCardId, version.id)}
+              disabled={isPending}
+              onClick={() => handleRollback(version.id)}
             >
               <RotateCcw className="mr-1 h-3.5 w-3.5" />
               Rollback
