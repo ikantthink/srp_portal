@@ -1,8 +1,35 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { PuckRendererServer as PuckRenderer } from "@/lib/puck/renderer-server";
 import { loadWebsitePage } from "@/lib/website/load-page";
+import {
+  defaultTitle,
+  getBusinessProfile,
+  pageMetadata,
+} from "@/lib/seo/business-profile";
 import Link from "next/link";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}): Promise<Metadata> {
+  const { preview } = await searchParams;
+  const [page, profile] = await Promise.all([
+    loadWebsitePage("home", { preview: preview === "draft" }),
+    getBusinessProfile(),
+  ]);
+
+  return pageMetadata(
+    {
+      title: profile.name,
+      meta_description: page?.meta_description ?? profile.description,
+    },
+    "/",
+    { absoluteTitle: defaultTitle(profile) }
+  );
+}
 
 export default async function HomePage({
   searchParams,

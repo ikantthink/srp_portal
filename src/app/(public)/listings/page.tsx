@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { Data } from "@puckeditor/core";
 import { PuckRendererServer as PuckRenderer } from "@/lib/puck/renderer-server";
 import { loadWebsitePage } from "@/lib/website/load-page";
+import { pageMetadata, slugToPath } from "@/lib/seo/business-profile";
 import { ListingsGridConfig } from "@/lib/puck/components/ListingsGrid";
 
 // `/listings` is now a CMS-managed Puck page (slug = "listings"). We can't
@@ -29,14 +30,15 @@ export async function generateMetadata({
     preview: preview === "draft",
   });
   if (!page) {
-    return {
-      title: ListingsGridConfig.defaultProps?.heading ?? "Property Listings",
-    };
+    return pageMetadata(
+      {
+        title: ListingsGridConfig.defaultProps?.heading ?? "Property Listings",
+        meta_description: null,
+      },
+      slugToPath(LISTINGS_SLUG)
+    );
   }
-  return {
-    title: page.title,
-    description: page.meta_description ?? undefined,
-  };
+  return pageMetadata(page, slugToPath(LISTINGS_SLUG));
 }
 
 export default async function ListingsPage({

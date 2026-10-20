@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PuckRendererServer as PuckRenderer } from "@/lib/puck/renderer-server";
 import { loadWebsitePage } from "@/lib/website/load-page";
+import { pageMetadata, slugToPath } from "@/lib/seo/business-profile";
 
 // `home` is rendered at `/` (not `/home`); reserve a few slugs the catch-all
 // must not steal from the static routes that still exist in /(public).
@@ -27,10 +28,7 @@ export async function generateMetadata({
   const page = await loadWebsitePage(slug, { preview: preview === "draft" });
   if (!page) return {};
 
-  return {
-    title: page.title,
-    description: page.meta_description ?? undefined,
-  };
+  return pageMetadata(page, slugToPath(slug));
 }
 
 export default async function CMSPage({

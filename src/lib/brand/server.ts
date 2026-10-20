@@ -35,6 +35,7 @@ export interface ResolvedBrand {
   font_heading: string;
   font_body: string;
   favicon_url: string | null;
+  logo_url: string | null;
 }
 
 // Defaults mirror those baked into `globals.css` so a missing row or a
@@ -51,6 +52,7 @@ const DEFAULTS: ResolvedBrand = {
   font_heading: "Inter",
   font_body: "Inter",
   favicon_url: null,
+  logo_url: null,
 };
 
 export const getBrandSettings = cache(async (): Promise<ResolvedBrand> => {
@@ -80,6 +82,7 @@ export const getBrandSettings = cache(async (): Promise<ResolvedBrand> => {
       font_heading: data.font_heading ?? DEFAULTS.font_heading,
       font_body: data.font_body ?? DEFAULTS.font_body,
       favicon_url: data.favicon_url ?? DEFAULTS.favicon_url,
+      logo_url: data.logo_url ?? DEFAULTS.logo_url,
     };
   } catch {
     // Network/RLS errors here are non-fatal — the CSS defaults in

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { PuckRendererServer as PuckRenderer } from "@/lib/puck/renderer-server";
 import { loadWebsitePage } from "@/lib/website/load-page";
+import { pageMetadata, slugToPath } from "@/lib/seo/business-profile";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -12,11 +13,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadWebsitePage(`blog-${slug}`);
-  if (!page) return { title: "Blog" };
-  return {
-    title: page.title,
-    description: page.meta_description ?? undefined,
-  };
+  return pageMetadata(
+    page ?? { title: "Blog", meta_description: null },
+    slugToPath(`blog-${slug}`)
+  );
 }
 
 export default async function BlogPostPage({

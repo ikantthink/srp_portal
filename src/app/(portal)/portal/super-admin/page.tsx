@@ -4,6 +4,7 @@ import {
   Globe,
   PlugZap,
   Building,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +31,18 @@ const groups: Group[] = [
         description: "Primary site domain and short URL domain",
         href: "/portal/super-admin/domains",
         icon: Globe,
+      },
+    ],
+  },
+  {
+    title: "Search",
+    description: "How search engines and AI assistants describe the business.",
+    sections: [
+      {
+        title: "Business Profile",
+        description: "Name, address, and profile links used in search results",
+        href: "/portal/super-admin/business-profile",
+        icon: Search,
       },
     ],
   },
