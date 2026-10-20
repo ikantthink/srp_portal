@@ -5,7 +5,7 @@ INSERT INTO public.website_settings (key, value)
 VALUES (
   'site_nav',
   jsonb_build_object(
-    'logoText', 'SRP Real Estate',
+    'logoText', 'SRP Realty Group',
     'logoUrl', '',
     'links', E'Home|/\nAbout|/about\nListings|/listings\nContact|/contact',
     'ctaText', 'Agent Login',
@@ -30,7 +30,7 @@ VALUES (
         'links', E'About|/about\nContact|/contact\nAgent Login|/login'
       )
     ),
-    'copyright', E'© {year} SRP Real Estate. All rights reserved.',
+    'copyright', E'© {year} SRP Realty Group. All rights reserved.',
     'socialLinks', E'facebook|https://facebook.com\ninstagram|https://instagram.com',
     'backgroundColor', 'dark'
   )

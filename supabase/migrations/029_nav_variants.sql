@@ -14,7 +14,7 @@ SELECT
     -- new `style`/`scroll` sub-objects are layered on, with the existing
     -- save overriding any matching keys at the top level only.
     jsonb_build_object(
-      'logoText', 'SRP Real Estate',
+      'logoText', 'SRP Realty Group',
       'logoUrl', '',
       'links', E'Home|/\nAbout|/about\nListings|/listings\nContact|/contact',
       'ctaText', 'Agent Login',

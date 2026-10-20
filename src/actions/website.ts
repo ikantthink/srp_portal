@@ -103,7 +103,7 @@ export async function ensureHomePage(): Promise<{ id: string } | { error: string
       slug: "home",
       title: "Home",
       meta_description:
-        "SRP Real Estate - Find your dream home with expert guidance for buyers and sellers.",
+        "SRP Realty Group - Find your dream home with expert guidance for buyers and sellers.",
       puck_data: HOME_DEFAULT_PUCK_DATA,
       draft_puck_data: HOME_DEFAULT_PUCK_DATA,
       published_puck_data: HOME_DEFAULT_PUCK_DATA,

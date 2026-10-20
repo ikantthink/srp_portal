@@ -25,7 +25,7 @@ export default function NewsletterBase({
           <div dangerouslySetInnerHTML={{ __html: safeBody }} />
           <Hr />
           <Text style={{ textAlign: "center" as const, color: "#9ca3af", fontSize: "12px" }}>
-            SRP Real Estate &middot; <Link href="{{unsubscribe_url}}">Unsubscribe</Link>
+            SRP Realty Group &middot; <Link href="{{unsubscribe_url}}">Unsubscribe</Link>
           </Text>
         </Container>
       </Body>

@@ -24,7 +24,7 @@ WHERE NOT EXISTS (SELECT 1 FROM public.brand_settings);
 
 -- Default website settings
 INSERT INTO public.website_settings (key, value) VALUES
-  ('site_title', '"SRP Real Estate"'),
+  ('site_title', '"SRP Realty Group"'),
   ('social_links', '{"facebook": "", "instagram": "", "twitter": "", "linkedin": ""}'),
   ('idx_config', '{"provider": "none", "api_key": ""}')
 ON CONFLICT (key) DO NOTHING;

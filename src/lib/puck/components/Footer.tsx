@@ -400,7 +400,7 @@ export const FOOTER_DEFAULTS: FooterProps = {
         [
           makeCopyrightBlock({
             id: "block_default_copy",
-            text: "© {year} SRP Real Estate. All rights reserved.",
+            text: "© {year} SRP Realty Group. All rights reserved.",
           }),
         ],
         [

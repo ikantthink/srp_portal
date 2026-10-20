@@ -5,7 +5,7 @@ export default function BlogPage() {
     <div className="min-h-screen">
       <header className="border-b">
         <div className="mx-auto flex h-16 max-w-7xl items-center px-6">
-          <Link href="/" className="text-xl font-bold text-brand-primary">SRP Real Estate</Link>
+          <Link href="/" className="text-xl font-bold text-brand-primary">SRP Realty Group</Link>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-6 py-20 space-y-8">

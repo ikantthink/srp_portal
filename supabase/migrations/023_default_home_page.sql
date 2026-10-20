@@ -5,7 +5,7 @@ INSERT INTO public.website_pages (slug, title, meta_description, puck_data, stat
 VALUES (
   'home',
   'Home',
-  'SRP Real Estate - Find your dream home with expert guidance for buyers and sellers.',
+  'SRP Realty Group - Find your dream home with expert guidance for buyers and sellers.',
   jsonb_build_object(
     'content', jsonb_build_array(
       jsonb_build_object(

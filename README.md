@@ -1,4 +1,4 @@
-# SRP Real Estate Portal
+# SRP Realty Group Portal
 
 A full-featured real estate team portal built with Next.js, Supabase, and Vercel. Includes a public marketing website, agent link cards, dynamic forms, transaction tracking, lead CRM, newsletters, and a visual page builder powered by Puck.
 

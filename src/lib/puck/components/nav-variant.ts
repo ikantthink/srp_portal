@@ -132,7 +132,7 @@ export function parseLinks(value: string): ParsedLink[] {
 }
 
 export const MAIN_NAV_DEFAULTS: MainNavProps = {
-  logoText: "SRP Real Estate",
+  logoText: "SRP Realty Group",
   logoUrl: "",
   links: "Home|/\nAbout|/about\nListings|/listings\nContact|/contact",
   ctaText: "Agent Login",
